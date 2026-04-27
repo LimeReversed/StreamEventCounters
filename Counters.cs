@@ -14,6 +14,7 @@ namespace Counters
         public StarCounter subscriberCounter = null;
         public Counter testCounter = null;
         public bool initialized = false;
+        public IInlineInvokeProxy CPH { get; set; } = new MockCPH();
         public bool UpdateHearts()
         {
             if (followerCounter == null)
@@ -637,3 +638,4 @@ namespace Counters
             }
         }
     }
+}

@@ -3,9 +3,16 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace Counters
 {
+    public class Source
+    {
+        public object value = null;
+        public bool visible;
+    }
+
     /// <summary>
     /// Mock interface matching the methods your code uses from CPH / _cph.
     /// This lets you test locally without Streamer.bot.
@@ -41,6 +48,13 @@ namespace Counters
     {
         public readonly Dictionary<string, object> _args = new Dictionary<string, object>();
         public readonly Dictionary<string, object> _globalVars = new Dictionary<string, object>();
+        public readonly Dictionary<string, Source> _sources = new Dictionary<string, Source>();
+        public static string subscriberCount = "subscriberCount";
+        public static string savedSubscriberCount = "savedSubscriberCount";
+        public static string followerCount = "followerCount";
+        public static string savedFollowerCount = "savedFollowerCount";
+        public static string previousTips = "previousTips";
+        public static string previousBits = "previousBits";
 
         // -----------------------------
         // Helper methods for testing
@@ -134,11 +148,28 @@ namespace Counters
         public void ObsSetGdiText(string scene, string source, string text)
         {
             Console.WriteLine($"[OBS Text] Scene='{scene}' Source='{source}' Text='{text}'");
+            if (_sources.ContainsKey(source))
+            {
+                _sources[source].value = text;
+            }
+            else 
+            {
+                _sources[source] = new Source { value = text };
+            }
         }
 
         public void ObsSetSourceVisibility(string scene, string source, bool visible)
         {
             Console.WriteLine($"[OBS Visibility] Scene='{scene}' Source='{source}' Visible={visible}");
+            if (_sources.ContainsKey(source))
+            {
+                _sources[source].visible = visible;
+            }
+            else
+            {
+                _sources[source] = new Source { visible = visible };
+            }
+
         }
 
         public void ObsMediaRestart(string scene, string source)
