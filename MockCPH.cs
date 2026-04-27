@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using static System.Net.Mime.MediaTypeNames;
+using Streamer.bot.Plugin.Interface;
 
 namespace Counters
 {
@@ -17,7 +14,7 @@ namespace Counters
     /// Mock interface matching the methods your code uses from CPH / _cph.
     /// This lets you test locally without Streamer.bot.
     /// </summary>
-    public interface IInlineInvokeProxy
+    public interface IInlineInvokeProxyMock
     {
         bool TryGetArg<T>(string name, out T value);
 
@@ -44,7 +41,7 @@ namespace Counters
     /// Simple local mock implementation for testing.
     /// Replace CPH with: new MockCPH()
     /// </summary>
-    public class MockCPH : IInlineInvokeProxy
+    public class MockCPH : IInlineInvokeProxyMock
     {
         public readonly Dictionary<string, object> _args = new Dictionary<string, object>();
         public readonly Dictionary<string, object> _globalVars = new Dictionary<string, object>();

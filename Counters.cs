@@ -1,122 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Streamer.bot.Plugin.Interface;
 
 namespace Counters
 {
     public class CounterManager
     {
-        public TipCounter tipCounter = null;
-        public BitCounter bitCounter = null;
-        public LoopableCounter followerCounter = null;
-        public StarCounter subscriberCounter = null;
-        public Counter testCounter = null;
-        public bool initialized = false;
-        public IInlineInvokeProxy CPH { get; set; } = new MockCPH();
-        public bool UpdateHearts()
-        {
-            if (followerCounter == null)
-            {
-                InitializeFollowCounter();
-                followerCounter.UpdatePackage();
-                return true;
-            }
 
-            followerCounter.Execute();
-            return true;
-        }
-
-        public bool RefreshHearts()
-        {
-            if (followerCounter == null)
-            {
-                InitializeFollowCounter();
-            }
-
-            followerCounter.Refresh();
-            return true;
-        }
-
-        public bool UpdateStars()
-        {
-            if (subscriberCounter == null)
-            {
-                subscriberCounter = new StarCounter(CPH);
-                subscriberCounter.UpdatePackage();
-                return true;
-            }
-
-            subscriberCounter.Execute();
-            return true;
-        }
-
-        // ----- Bits -----
-        public bool UpdateBits()
-        {
-            if (bitCounter == null)
-            {
-                bitCounter = new BitCounter(CPH);
-                bitCounter.UpdatePackage();
-                return true;
-            }
-
-            bitCounter.Execute();
-            return true;
-        }
-
-        // ----- Tips -----
-        public bool UpdateTips()
-        {
-            if (tipCounter == null)
-            {
-                tipCounter = new TipCounter(CPH);
-                tipCounter.UpdatePackage();
-                return true;
-            }
-
-            tipCounter.Execute();
-            return true;
-        }
-
-        public void InitializeFollowCounter()
-        {
-            SceneSourcePair followerIncrementSound = new SceneSourcePair(SOURCES.SOUND_FOLLOWER_INCREMENT.Scene, SOURCES.SOUND_FOLLOWER_INCREMENT.Source);
-            SceneSourcePair followerDecrementSound = new SceneSourcePair(SOURCES.SOUND_FOLLOWER_DECREMENT.Scene, SOURCES.SOUND_FOLLOWER_DECREMENT.Source);
-            SceneSourcePair followerItemSource = new SceneSourcePair(SOURCES.HEART_FULL.Scene, SOURCES.HEART_FULL.Source);
-            followerCounter = new LoopableCounter("followerCount", "savedFollowerCount", null, null, null, followerItemSource, followerIncrementSound, followerDecrementSound, 400, 10, CPH);
-        }
-
-        public bool Initialize()
-        {
-            tipCounter = new TipCounter(CPH);
-            bitCounter = new BitCounter(CPH);
-            subscriberCounter = new StarCounter(CPH);
-            InitializeFollowCounter();
-            // bitCounter.CurrentCountName = "message";
-            tipCounter.UpdatePackage();
-            bitCounter.UpdatePackage();
-            subscriberCounter.UpdatePackage();
-            followerCounter.UpdatePackage();
-            initialized = true;
-            return true;
-        }
-
-        public bool Execute()
-        {
-            if (!initialized)
-            {
-                Initialize();
-                return true;
-            }
-
-            tipCounter.Execute();
-            bitCounter.Execute();
-            subscriberCounter.Execute();
-            followerCounter.Execute();
-            return true;
-        }
     }
 
     // *************************************************************************************************************************************
@@ -182,6 +72,7 @@ namespace Counters
             get
             {
                 return _cph.GetGlobalVar<int>(PreviousCountName, true);
+
             }
 
             set
@@ -383,20 +274,20 @@ namespace Counters
         private SceneSourcePair soundSource = new SceneSourcePair(SOURCES.SOUND_RING_INCREMENT.Scene, SOURCES.SOUND_RING_INCREMENT.Source);
         private SceneSourcePair soundLoopSource = new SceneSourcePair(SOURCES.SOUND_MULTI_RING_GET.Scene, SOURCES.SOUND_MULTI_RING_GET.Source);
         public static List<SceneSourcePair> ACTIVE_SOURCES = new List<SceneSourcePair>
-{
-    SOURCES.BIT_COUNT_ACTIVE,
-    SOURCES.BIT_COUNT_BACKGROUND_ACTIVE
-};
+        {
+            SOURCES.BIT_COUNT_ACTIVE,
+            SOURCES.BIT_COUNT_BACKGROUND_ACTIVE
+        };
         public static List<SceneSourcePair> INACTIVE_SOURCES = new List<SceneSourcePair>
-{
-    SOURCES.BIT_COUNT,
-    SOURCES.BIT_COUNT_BACKGROUND
-};
+        {
+            SOURCES.BIT_COUNT,
+            SOURCES.BIT_COUNT_BACKGROUND
+        };
         public static List<SceneSourcePair> COUNTER_SOURCES = new List<SceneSourcePair>
-{
-    SOURCES.BIT_COUNT,
-    SOURCES.BIT_COUNT_ACTIVE
-};
+        {
+            SOURCES.BIT_COUNT,
+            SOURCES.BIT_COUNT_ACTIVE
+        };
         public BitCounter(IInlineInvokeProxy cph) : base("bits", "previousBits", ACTIVE_SOURCES, INACTIVE_SOURCES, COUNTER_SOURCES, 1, cph)
         {
         }
@@ -431,20 +322,20 @@ namespace Counters
     {
         private SceneSourcePair soundSource = new SceneSourcePair(SOURCES.SOUND_SUB_INCREMENT.Scene, SOURCES.SOUND_SUB_INCREMENT.Source);
         public static List<SceneSourcePair> ACTIVE_SOURCES = new List<SceneSourcePair>
-{
-    SOURCES.SUB_COUNT_ACTIVE,
-    SOURCES.SUB_COUNT_BACKGROUND_ACTIVE
-};
+        {
+            SOURCES.SUB_COUNT_ACTIVE,
+            SOURCES.SUB_COUNT_BACKGROUND_ACTIVE
+        };
         public static List<SceneSourcePair> INACTIVE_SOURCES = new List<SceneSourcePair>
-{
-    SOURCES.SUB_COUNT,
-    SOURCES.SUB_COUNT_BACKGROUND
-};
+        {
+            SOURCES.SUB_COUNT,
+            SOURCES.SUB_COUNT_BACKGROUND
+        };
         public static List<SceneSourcePair> COUNTER_SOURCES = new List<SceneSourcePair>
-{
-    SOURCES.SUB_COUNT,
-    SOURCES.SUB_COUNT_ACTIVE
-};
+        {
+            SOURCES.SUB_COUNT,
+            SOURCES.SUB_COUNT_ACTIVE
+        };
         public StarCounter(IInlineInvokeProxy cph) : base("subscriberCount", "savedSubscriberCount", ACTIVE_SOURCES, INACTIVE_SOURCES, COUNTER_SOURCES, 500, cph, 2000)
         {
         }
