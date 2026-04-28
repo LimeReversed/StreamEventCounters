@@ -54,9 +54,19 @@ namespace Counters
             SOURCES.SUB_COUNT_ACTIVE
         };
 
+        
+        public static List<SceneSourcePair> FOLLOW_ACTIVE_SOURCES = new List<SceneSourcePair>();
+
+        public static List<SceneSourcePair> FOLLOW_INACTIVE_SOURCES = new List<SceneSourcePair>();
+
+        public static List<SceneSourcePair> FOLLOW_COUNTER_SOURCES = new List<SceneSourcePair>();
+
+
+
         public static Counter tipCounter = null;
         public static Counter bitCounter = null;
         public static Counter subCounter = null;
+        public static CounterLoopable followCounter = null;
 
         public static void InitializeAll(IInlineInvokeProxy CPH)
         {
@@ -70,7 +80,12 @@ namespace Counters
 
             var subDataHandler = new DataHandler(CPH, "subscriberCount", "lastSubscriberCount", SUB_INACTIVE_SOURCES, SUB_ACTIVE_SOURCES, SUB_COUNTER_SOURCES, null, null);
             var subIncrementSound = new SoundPlayerBasic(CPH, SOURCES.SOUND_SUB_INCREMENT, 2000);
-            var subCounter = new Counter(CPH, subDataHandler, 50, subIncrementSound);
+            var subCounter = new Counter(CPH, subDataHandler, 500, subIncrementSound);
+
+            var followDataHandler = new DataHandlerWithItem(CPH, "followerCount", "lastFollowerCount", null, null, null, SOURCES.HEART_FULL, null, null);
+            var followerIncrementSound = new SoundPlayerBasic(CPH, SOURCES.SOUND_FOLLOWER_INCREMENT, 400);
+            var followerDecrementSound = new SoundPlayerBasic(CPH, SOURCES.SOUND_FOLLOWER_DECREMENT, 400);
+            followCounter = new CounterLoopable(CPH, followDataHandler, 200, followerIncrementSound, followerDecrementSound, 10);
         }
     }
 
@@ -210,9 +225,9 @@ namespace Counters
         public int CurrentCount { get; set; } = 0;
         public string CurrentCountName { get; set; }
         public string PreviousCountName { get; set; }
-        public List<SceneSourcePair> InactiveSources { get; set; } = new List<SceneSourcePair>();
-        public List<SceneSourcePair> ActiveSources { get; set; } = new List<SceneSourcePair>();
-        public List<SceneSourcePair> CounterSources { get; set; } = new List<SceneSourcePair>();
+        public List<SceneSourcePair> InactiveSources { get; set; }
+        public List<SceneSourcePair> ActiveSources { get; set; }
+        public List<SceneSourcePair> CounterSources { get; set; }
         public Func<int, int> Convert { get; set; }
         public Func<int, int, int> UpdateCount { get; set; }
 
@@ -221,9 +236,9 @@ namespace Counters
             _cph = cph;
             CurrentCountName = currentCountName;
             PreviousCountName = previousCountName;
-            InactiveSources = inactiveSources;
-            ActiveSources = activeSources;
-            CounterSources = counterSources;
+            InactiveSources = inactiveSources ?? new List<SceneSourcePair>();
+            ActiveSources = activeSources ?? new List<SceneSourcePair>();
+            CounterSources = counterSources ?? new List<SceneSourcePair>();
             Convert = convert ?? ((number) => number);
             UpdateCount = updateCount ?? ((current, updated) => updated);
         }
