@@ -80,7 +80,7 @@ namespace Counters
 
             var subDataHandler = new DataHandler(CPH, "subscriberCount", "lastSubscriberCount", SUB_INACTIVE_SOURCES, SUB_ACTIVE_SOURCES, SUB_COUNTER_SOURCES, null, null);
             var subIncrementSound = new SoundPlayerBasic(CPH, SOURCES.SOUND_SUB_INCREMENT, 2000);
-            var subCounter = new Counter(CPH, subDataHandler, 500, subIncrementSound);
+            subCounter = new Counter(CPH, subDataHandler, 500, subIncrementSound);
 
             var followDataHandler = new DataHandlerWithItem(CPH, "followerCount", "lastFollowerCount", null, null, null, SOURCES.HEART_FULL, null, null);
             var followerIncrementSound = new SoundPlayerBasic(CPH, SOURCES.SOUND_FOLLOWER_INCREMENT, 400);
@@ -270,7 +270,7 @@ namespace Counters
 
     public class DataHandlerWithItem : DataHandler
     {
-        SceneSourcePair ItemSource { get; set; }
+        public SceneSourcePair ItemSource { get; set; }
         public DataHandlerWithItem(IInlineInvokeProxy cph, string currentCountName, string previousCountName, List<SceneSourcePair> inactiveSources, List<SceneSourcePair> activeSources, List<SceneSourcePair> counterSources, SceneSourcePair itemSource, Func<int, int> convert, Func<int, int, int> updateCount) : base(cph, currentCountName, previousCountName, inactiveSources, activeSources, counterSources, convert, updateCount)
         {
             ItemSource = itemSource;
@@ -368,7 +368,6 @@ namespace Counters
     {
         public SoundPlayer DecrementSound { get; set; }
         public int Mod { get; set; } = 0;
-        public SceneSourcePair ItemSource { get; set; }
 
         public CounterLoopable(IInlineInvokeProxy cph, DataHandlerWithItem dataHandler, int loopSpeed, SoundPlayer incrementSound, SoundPlayer decrementSound, int mod) : base(cph, dataHandler, loopSpeed, incrementSound)
         {
@@ -416,11 +415,11 @@ namespace Counters
                 int position = i % Mod;
                 if (i > 0 && i <= heartCount)
                 {
-                    WriteToSource(ItemSource, true, position);
+                    WriteToSource((DataHandler as DataHandlerWithItem).ItemSource, true, position);
                 }
                 else
                 {
-                    WriteToSource(ItemSource, false, position);
+                    WriteToSource((DataHandler as DataHandlerWithItem).ItemSource, false, position);
                 }
             }
 
@@ -431,7 +430,7 @@ namespace Counters
         {
             for (int i = 0; i < Mod; i++)
             {
-                WriteToSource(ItemSource, false, i);
+                WriteToSource((DataHandler as DataHandlerWithItem).ItemSource, false, i);
             }
 
             return true;
@@ -441,7 +440,7 @@ namespace Counters
         {
             for (int i = 0; i < Mod; i++)
             {
-                WriteToSource(ItemSource, true, i);
+                WriteToSource((DataHandler as DataHandlerWithItem).ItemSource, true, i);
             }
 
             return true;
@@ -472,7 +471,7 @@ namespace Counters
                 }
 
                 bool last = position == removeSequence[removeSequence.Count - 1];
-                WriteToSource(ItemSource, false, position);
+                WriteToSource((DataHandler as DataHandlerWithItem).ItemSource, false, position);
                 DecrementSound.Play();
                 _cph.Wait(last ? DecrementSound.SourceLength : LoopSpeed);
             }
@@ -487,7 +486,7 @@ namespace Counters
                 }
 
                 bool last = position == addSequence[addSequence.Count - 1];
-                WriteToSource(ItemSource, true, position);
+                WriteToSource((DataHandler as DataHandlerWithItem).ItemSource, true, position);
                 IncrementSound.Play();
                 _cph.Wait(last ? IncrementSound.SourceLength : LoopSpeed);
             }
