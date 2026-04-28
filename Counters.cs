@@ -53,6 +53,25 @@ namespace Counters
             SOURCES.SUB_COUNT,
             SOURCES.SUB_COUNT_ACTIVE
         };
+
+        public static Counter tipCounter = null;
+        public static Counter bitCounter = null;
+        public static Counter subCounter = null;
+
+        public static void InitializeAll(IInlineInvokeProxy CPH)
+        {
+            var tipDataHandler = new DataHandler(CPH, "tipAmount", "lastTips", TIP_INACTIVE_SOURCES, TIP_ACTIVE_SOURCES, TIP_COUNTER_SOURCES, (nr) => nr / 2, (current, updated) => current + updated);
+            var tipIncrementSound = new SoundPlayerLoop(CPH, SOURCES.SOUND_RING_INCREMENT, SOURCES.SOUND_MULTI_RING_GET, 500);
+            tipCounter = new Counter(CPH, tipDataHandler, 1, tipIncrementSound);
+
+            var bitDataHandler = new DataHandler(CPH, "bits", "lastBits", BIT_INACTIVE_SOURCES, BIT_ACTIVE_SOURCES, BIT_COUNTER_SOURCES, (nr) => nr * 5, (current, updated) => current + updated);
+            var bitIncrementSound = new SoundPlayerLoop(CPH, SOURCES.SOUND_RING_INCREMENT, SOURCES.SOUND_MULTI_RING_GET, 500);
+            bitCounter = new Counter(CPH, bitDataHandler, 1, bitIncrementSound);
+
+            var subDataHandler = new DataHandler(CPH, "subscriberCount", "lastSubscriberCount", SUB_INACTIVE_SOURCES, SUB_ACTIVE_SOURCES, SUB_COUNTER_SOURCES, null, null);
+            var subIncrementSound = new SoundPlayerBasic(CPH, SOURCES.SOUND_SUB_INCREMENT, 2000);
+            var subCounter = new Counter(CPH, subDataHandler, 50, subIncrementSound);
+        }
     }
 
     public static class SCENES
@@ -108,33 +127,33 @@ namespace Counters
         protected IInlineInvokeProxy _cph = null;
         public SceneSourcePair Source { get; set; } = null;
         public int SourceLength { get; set; } = 0;
-        public SoundPlayer(SceneSourcePair source, int sourceLength, IInlineInvokeProxy cph)
+        public SoundPlayer(IInlineInvokeProxy cph, SceneSourcePair source, int sourceLength)
         {
             Source = source;
             SourceLength = sourceLength;
             _cph = cph;
         }
-        public abstract void PrepareSound();
-        public abstract void FinishSound();
-        public abstract void PlaySound();
+        public abstract void Prepare();
+        public abstract void Play();
+        public abstract void Finish();
     }
 
     public class SoundPlayerBasic : SoundPlayer
     {
-        public SoundPlayerBasic(SceneSourcePair source, int sourceLength, IInlineInvokeProxy cph) : base(source, sourceLength, cph)
+        public SoundPlayerBasic(IInlineInvokeProxy cph, SceneSourcePair source, int sourceLength) : base(cph, source, sourceLength)
         {
         }
 
-        public override void PrepareSound()
+        public override void Prepare()
         {
             _cph.ObsSetSourceVisibility(Source.Scene, Source.Source, true);
         }
-        public override void PlaySound()
+        public override void Play()
         {
             _cph.ObsMediaRestart(Source.Scene, Source.Source);
         }
 
-        public override void FinishSound()
+        public override void Finish()
         {
             _cph.ObsSetSourceVisibility(Source.Scene, Source.Source, false);
         }
@@ -143,22 +162,22 @@ namespace Counters
     public class SoundPlayerLoop : SoundPlayer
     {
         public SceneSourcePair LoopSource { get; set; } = null;
-        public SoundPlayerLoop(SceneSourcePair source, SceneSourcePair loopSource, int sourceLength, IInlineInvokeProxy cph) : base(source, sourceLength, cph)
+        public SoundPlayerLoop(IInlineInvokeProxy cph, SceneSourcePair source, SceneSourcePair loopSource, int sourceLength) : base(cph, source, sourceLength)
         {
             LoopSource = loopSource;
         }
 
-        public override void PrepareSound()
+        public override void Prepare()
         {
             _cph.ObsSetSourceVisibility(Source.Scene, Source.Source, true);
             _cph.ObsSetSourceVisibility(LoopSource.Scene, LoopSource.Source, true);
             _cph.ObsMediaRestart(LoopSource.Scene, LoopSource.Source);
         }
-        public override void PlaySound()
+        public override void Play()
         {
         }
 
-        public override void FinishSound()
+        public override void Finish()
         {
             _cph.ObsMediaStop(LoopSource.Scene, LoopSource.Source);
             _cph.ObsMediaRestart(Source.Scene, Source.Source);
@@ -168,7 +187,7 @@ namespace Counters
         }
     }
 
-    public class  DataHandler
+    public class DataHandler
     {
         private int _previousCount = 0;
         protected IInlineInvokeProxy _cph;
@@ -195,8 +214,9 @@ namespace Counters
         public List<SceneSourcePair> ActiveSources { get; set; } = new List<SceneSourcePair>();
         public List<SceneSourcePair> CounterSources { get; set; } = new List<SceneSourcePair>();
         public Func<int, int> Convert { get; set; }
+        public Func<int, int, int> UpdateCount { get; set; }
 
-        public DataHandler(IInlineInvokeProxy cph, string currentCountName, string previousCountName, List<SceneSourcePair> inactiveSources, List<SceneSourcePair> activeSources, List<SceneSourcePair> counterSources, Func<int, int> convert)
+        public DataHandler(IInlineInvokeProxy cph, string currentCountName, string previousCountName, List<SceneSourcePair> inactiveSources, List<SceneSourcePair> activeSources, List<SceneSourcePair> counterSources, Func<int, int> convert, Func<int, int, int> updateCount)
         {
             _cph = cph;
             CurrentCountName = currentCountName;
@@ -205,6 +225,7 @@ namespace Counters
             ActiveSources = activeSources;
             CounterSources = counterSources;
             Convert = convert ?? ((number) => number);
+            UpdateCount = updateCount ?? ((current, updated) => updated);
         }
 
         public virtual void Initialize()
@@ -228,23 +249,16 @@ namespace Counters
                 return;
             }
 
-            CurrentCount = currentCountResult;
+            CurrentCount = UpdateCount(CurrentCount, currentCountResult);
         }
     }
 
-    public class DataHandlerIncremental : DataHandler
+    public class DataHandlerWithItem : DataHandler
     {
-        public DataHandlerIncremental(IInlineInvokeProxy cph, string currentCountName, string previousCountName, List<SceneSourcePair> inactiveSources, List<SceneSourcePair> activeSources, List<SceneSourcePair> counterSources, Func<int, int> convert) : base(cph, currentCountName, previousCountName, inactiveSources, activeSources, counterSources, convert)
+        SceneSourcePair ItemSource { get; set; }
+        public DataHandlerWithItem(IInlineInvokeProxy cph, string currentCountName, string previousCountName, List<SceneSourcePair> inactiveSources, List<SceneSourcePair> activeSources, List<SceneSourcePair> counterSources, SceneSourcePair itemSource, Func<int, int> convert, Func<int, int, int> updateCount) : base(cph, currentCountName, previousCountName, inactiveSources, activeSources, counterSources, convert, updateCount)
         {
-        }
-        public override void UpdateData()
-        {
-            if (!_cph.TryGetArg<int>(CurrentCountName, out int currentCountResult))
-            {
-                _cph.LogError($"TryGetArg for {CurrentCountName} failed.");
-                return;
-            }
-            CurrentCount += currentCountResult;
+            ItemSource = itemSource;
         }
     }
 
@@ -254,16 +268,16 @@ namespace Counters
     {
         protected IInlineInvokeProxy _cph;
         public int LoopSpeed { get; set; } = 0;
-        public SoundPlayer SoundPlayer { get; set; } = null;
+        public SoundPlayer IncrementSound { get; set; } = null;
         public DataHandler DataHandler { get; set; } = null;
 
-        public Counter(IInlineInvokeProxy cph, DataHandler dataHandler, int loopSpeed, SoundPlayer soundPlayer)
+        public Counter(IInlineInvokeProxy cph, DataHandler dataHandler, int loopSpeed, SoundPlayer incrementSound)
         {
             _cph = cph;
             DataHandler = dataHandler;
             LoopSpeed = loopSpeed;
-            SoundPlayer = soundPlayer;
-        }        
+            IncrementSound = incrementSound;
+        }
 
         protected virtual void WriteToSources(List<SceneSourcePair> sources, int number)
         {
@@ -300,7 +314,7 @@ namespace Counters
             }
 
             SetWriteState(true);
-            SoundPlayer.PrepareSound();
+            IncrementSound.Prepare();
         }
 
         protected virtual void ApplyWrite()
@@ -308,9 +322,9 @@ namespace Counters
             for (int i = DataHandler.Convert(DataHandler.PreviousCount); i <= DataHandler.Convert(DataHandler.CurrentCount); i++)
             {
                 WriteToSources(DataHandler.CounterSources, i);
-                SoundPlayer.PlaySound();
+                IncrementSound.Play();
                 bool isLastIteration = i >= DataHandler.Convert(DataHandler.CurrentCount);
-                _cph.Wait(isLastIteration ? SoundPlayer.SourceLength : LoopSpeed);
+                _cph.Wait(isLastIteration ? IncrementSound.SourceLength : LoopSpeed);
             }
         }
 
@@ -318,7 +332,7 @@ namespace Counters
         {
             SetWriteState(false);
             DataHandler.PreviousCount = DataHandler.CurrentCount;
-            SoundPlayer.FinishSound();
+            IncrementSound.Finish();
         }
 
         public virtual void WriteToOBS()
@@ -335,18 +349,15 @@ namespace Counters
         }
     }
 
-    public class LoopableCounter : Counter
+    public class CounterLoopable : Counter
     {
-        public SceneSourcePair SoundIncrement { get; set; }
-        public SceneSourcePair SoundDecrement { get; set; }
+        public SoundPlayer DecrementSound { get; set; }
         public int Mod { get; set; } = 0;
         public SceneSourcePair ItemSource { get; set; }
 
-        public LoopableCounter(string currentCountName, string previousCountName, List<SceneSourcePair> activeSources, List<SceneSourcePair> inactiveSources, List<SceneSourcePair> counterSources, SceneSourcePair itemSource, SceneSourcePair soundIncrement, SceneSourcePair soundDecrement, int loopSpeed, int mod, IInlineInvokeProxy cph) : base(currentCountName, previousCountName, activeSources, inactiveSources, counterSources, loopSpeed, cph)
+        public CounterLoopable(IInlineInvokeProxy cph, DataHandlerWithItem dataHandler, int loopSpeed, SoundPlayer incrementSound, SoundPlayer decrementSound, int mod) : base(cph, dataHandler, loopSpeed, incrementSound)
         {
-            ItemSource = itemSource;
-            SoundIncrement = soundIncrement;
-            SoundDecrement = soundDecrement;
+            DecrementSound = decrementSound;
             Mod = mod;
         }
 
@@ -376,44 +387,25 @@ namespace Counters
             return result;
         }
 
-        protected virtual void PrintToItemSource(int position, bool visible)
+        protected override void WriteToSource(SceneSourcePair source, bool visible, int position = 0)
         {
-            _cph.LogInfo(ItemSource.Scene);
-            _cph.LogInfo(ItemSource.Source);
-            _cph.LogInfo(ItemSource.Source.Replace("#", position.ToString()));
-            _cph.ObsSetSourceVisibility(ItemSource.Scene, ItemSource.Source.Replace("#", position.ToString()), visible);
-        }
-
-        protected override void WriteToSources(int position, bool visible)
-        {
-            _cph.ObsSetSourceVisibility(ItemSource.Scene, ItemSource.Source.Replace("#", position.ToString()), visible);
-        }
-
-        protected override void PrepareWrite()
-        {
-            if (PreviousCount >= CurrentCount)
-            {
-                Refresh();
-            }
-
-            SetWriteState(true);
-            PrepareSound();
+            _cph.ObsSetSourceVisibility(source.Scene, source.Source.Replace("#", position.ToString()), visible);
         }
 
         public bool Refresh()
         {
-            GetValues();
-            int heartCount = CurrentCount % Mod == 0 ? Mod : CurrentCount % Mod;
+            DataHandler.UpdateData();
+            int heartCount = DataHandler.CurrentCount % Mod == 0 ? Mod : DataHandler.CurrentCount % Mod;
             for (int i = 1; i <= Mod; i++)
             {
                 int position = i % Mod;
                 if (i > 0 && i <= heartCount)
                 {
-                    PrintToItemSource(position, true);
+                    WriteToSource(ItemSource, true, position);
                 }
                 else
                 {
-                    PrintToItemSource(position, false);
+                    WriteToSource(ItemSource, false, position);
                 }
             }
 
@@ -424,7 +416,7 @@ namespace Counters
         {
             for (int i = 0; i < Mod; i++)
             {
-                PrintToItemSource(i, false);
+                WriteToSource(ItemSource, false, i);
             }
 
             return true;
@@ -434,15 +426,28 @@ namespace Counters
         {
             for (int i = 0; i < Mod; i++)
             {
-                PrintToItemSource(i, true);
+                WriteToSource(ItemSource, true, i);
             }
 
             return true;
         }
 
+        protected override void PrepareWrite()
+        {
+            if (DataHandler.PreviousCount >= DataHandler.CurrentCount)
+            {
+                Refresh();
+            }
+
+            SetWriteState(true);
+            IncrementSound.Prepare();
+            DecrementSound.Prepare();
+        }
+
         protected override void ApplyWrite()
         {
-            var removeSequence = GetRemoveSequence(PreviousCount, CurrentCount);
+            var removeSequence = GetRemoveSequence(DataHandler.PreviousCount, DataHandler.CurrentCount);
+
             foreach (int position in removeSequence)
             {
                 if (position == 0)
@@ -451,12 +456,13 @@ namespace Counters
                     Fill();
                 }
 
-                PrintToItemSource(position, false);
-                _cph.ObsMediaRestart(SoundDecrement.Scene, SoundDecrement.Source);
-                _cph.Wait(LoopSpeed);
+                bool last = position == removeSequence[removeSequence.Count - 1];
+                WriteToSource(ItemSource, false, position);
+                DecrementSound.Play();
+                _cph.Wait(last ? DecrementSound.SourceLength : LoopSpeed);
             }
 
-            var addSequence = GetAddSequence(PreviousCount, CurrentCount);
+            var addSequence = GetAddSequence(DataHandler.PreviousCount, DataHandler.CurrentCount);
             foreach (int position in addSequence)
             {
                 if (position == 1)
@@ -465,10 +471,19 @@ namespace Counters
                     Clear();
                 }
 
-                PrintToItemSource(position, true);
-                _cph.ObsMediaRestart(SoundIncrement.Scene, SoundIncrement.Source);
-                _cph.Wait(LoopSpeed);
+                bool last = position == addSequence[addSequence.Count - 1];
+                WriteToSource(ItemSource, true, position);
+                IncrementSound.Play();
+                _cph.Wait(last ? IncrementSound.SourceLength : LoopSpeed);
             }
+        }
+
+        protected override void FinishWrite()
+        {
+            SetWriteState(false);
+            DataHandler.PreviousCount = DataHandler.CurrentCount;
+            IncrementSound.Finish();
+            DecrementSound.Finish();
         }
     }
 }
