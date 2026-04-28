@@ -64,19 +64,25 @@ namespace Counters
 
 
         public static Counter tipCounter = null;
+        public static Counter tipCounterTest = null;
         public static Counter bitCounter = null;
+        public static Counter bitCounterTest = null;
         public static Counter subCounter = null;
         public static CounterLoopable followCounter = null;
 
         public static void InitializeAll(IInlineInvokeProxy CPH)
         {
-            var tipDataHandler = new DataHandler(CPH, "tipAmount", "lastTips", TIP_INACTIVE_SOURCES, TIP_ACTIVE_SOURCES, TIP_COUNTER_SOURCES, (nr) => nr / 2, (current, updated) => current + updated);
+            var tipDataHandler = new DataHandler(CPH, "tipAmount", "lastTips", TIP_INACTIVE_SOURCES, TIP_ACTIVE_SOURCES, TIP_COUNTER_SOURCES, (nr) => nr * 5, (current, updated) => current + updated);
+            var tipDataHandlerTest = new DataHandler(CPH, "message", "lastTips", TIP_INACTIVE_SOURCES, TIP_ACTIVE_SOURCES, TIP_COUNTER_SOURCES, (nr) => nr * 5, (current, updated) => current + updated);
             var tipIncrementSound = new SoundPlayerLoop(CPH, SOURCES.SOUND_RING_INCREMENT, SOURCES.SOUND_MULTI_RING_GET, 500);
             tipCounter = new Counter(CPH, tipDataHandler, 1, tipIncrementSound);
+            tipCounterTest = new Counter(CPH, tipDataHandlerTest, 1, tipIncrementSound);
 
-            var bitDataHandler = new DataHandler(CPH, "bits", "lastBits", BIT_INACTIVE_SOURCES, BIT_ACTIVE_SOURCES, BIT_COUNTER_SOURCES, (nr) => nr * 5, (current, updated) => current + updated);
+            var bitDataHandler = new DataHandler(CPH, "bits", "lastBits", BIT_INACTIVE_SOURCES, BIT_ACTIVE_SOURCES, BIT_COUNTER_SOURCES, (nr) => nr / 2, (current, updated) => current + updated);
+            var bitDataHandlerTest = new DataHandler(CPH, "message", "lastBits", BIT_INACTIVE_SOURCES, BIT_ACTIVE_SOURCES, BIT_COUNTER_SOURCES, (nr) => nr / 2, (current, updated) => current + updated);
             var bitIncrementSound = new SoundPlayerLoop(CPH, SOURCES.SOUND_RING_INCREMENT, SOURCES.SOUND_MULTI_RING_GET, 500);
             bitCounter = new Counter(CPH, bitDataHandler, 1, bitIncrementSound);
+            bitCounterTest = new Counter(CPH, bitDataHandlerTest, 1, bitIncrementSound);
 
             var subDataHandler = new DataHandler(CPH, "subscriberCount", "lastSubscriberCount", SUB_INACTIVE_SOURCES, SUB_ACTIVE_SOURCES, SUB_COUNTER_SOURCES, null, null);
             var subIncrementSound = new SoundPlayerBasic(CPH, SOURCES.SOUND_SUB_INCREMENT, 2000);
@@ -204,6 +210,7 @@ namespace Counters
     public class DataHandler
     {
         private int _previousCount = 0;
+        private int _currentCount = 0;
         protected IInlineInvokeProxy _cph;
         public int InitialCount { get; set; } = 0;
 
@@ -221,7 +228,11 @@ namespace Counters
                 _cph.SetGlobalVar(PreviousCountName, value, true);
             }
         }
-        public int CurrentCount { get; set; } = 0;
+        public int CurrentCount {
+            get { return Convert(_currentCount); }
+            set { _currentCount = value; }
+        }
+
         public string CurrentCountName { get; set; }
         public string PreviousCountName { get; set; }
         public List<SceneSourcePair> InactiveSources { get; set; }
@@ -246,14 +257,8 @@ namespace Counters
         public virtual void Initialize()
         {
             // Don't forget to actually get the values before running this code. 
-            if (!_cph.TryGetArg<int>(CurrentCountName, out int currentCountResult))
-            {
-                _cph.LogError($"TryGetArg for {CurrentCountName} failed.");
-                return;
-            }
-
-            InitialCount = PreviousCount;
-            CurrentCount = currentCountResult;
+            UpdateData();
+            InitialCount = PreviousCount; // Expected to be already converted.
         }
 
         public virtual void UpdateData()
@@ -264,7 +269,7 @@ namespace Counters
                 return;
             }
 
-            CurrentCount = UpdateCount(CurrentCount, currentCountResult);
+            CurrentCount = UpdateCount(_currentCount, currentCountResult);
         }
     }
 
@@ -296,7 +301,6 @@ namespace Counters
 
         protected virtual void WriteToSources(List<SceneSourcePair> sources, int number)
         {
-            number = DataHandler.Convert(number);
             foreach (SceneSourcePair pair in sources)
             {
                 _cph.ObsSetGdiText(pair.Scene, pair.Source, number.ToString());
@@ -334,11 +338,11 @@ namespace Counters
 
         protected virtual void ApplyWrite()
         {
-            for (int i = DataHandler.Convert(DataHandler.PreviousCount); i <= DataHandler.Convert(DataHandler.CurrentCount); i++)
+            for (int i = DataHandler.PreviousCount; i <= DataHandler.CurrentCount; i++)
             {
                 WriteToSources(DataHandler.CounterSources, i);
                 IncrementSound.Play();
-                bool isLastIteration = i >= DataHandler.Convert(DataHandler.CurrentCount);
+                bool isLastIteration = i >= DataHandler.CurrentCount;
                 _cph.Wait(isLastIteration ? IncrementSound.SourceLength : LoopSpeed);
             }
         }
