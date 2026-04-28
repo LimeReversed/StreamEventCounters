@@ -6,11 +6,55 @@ namespace Counters
 {
     public class CounterManager
     {
+        public static List<SceneSourcePair> TIP_ACTIVE_SOURCES = new List<SceneSourcePair>
+        {
+            SOURCES.TIP_COUNT_ACTIVE,
+            SOURCES.TIP_COUNT_BACKGROUND_ACTIVE
+        };
+        public static List<SceneSourcePair> TIP_INACTIVE_SOURCES = new List<SceneSourcePair>
+        {
+            SOURCES.TIP_COUNT,
+            SOURCES.TIP_COUNT_BACKGROUND
+        };
+        public static List<SceneSourcePair> TIP_COUNTER_SOURCES = new List<SceneSourcePair>
+        {
+            SOURCES.TIP_COUNT,
+            SOURCES.TIP_COUNT_ACTIVE
+        };
 
+        public static List<SceneSourcePair> BIT_ACTIVE_SOURCES = new List<SceneSourcePair>
+        {
+            SOURCES.BIT_COUNT_ACTIVE,
+            SOURCES.BIT_COUNT_BACKGROUND_ACTIVE
+        };
+        public static List<SceneSourcePair> BIT_INACTIVE_SOURCES = new List<SceneSourcePair>
+        {
+            SOURCES.BIT_COUNT,
+            SOURCES.BIT_COUNT_BACKGROUND
+        };
+        public static List<SceneSourcePair> BIT_COUNTER_SOURCES = new List<SceneSourcePair>
+        {
+            SOURCES.BIT_COUNT,
+            SOURCES.BIT_COUNT_ACTIVE
+        };
+
+        public static List<SceneSourcePair> SUB_ACTIVE_SOURCES = new List<SceneSourcePair>
+        {
+            SOURCES.SUB_COUNT_ACTIVE,
+            SOURCES.SUB_COUNT_BACKGROUND_ACTIVE
+        };
+        public static List<SceneSourcePair> SUB_INACTIVE_SOURCES = new List<SceneSourcePair>
+        {
+            SOURCES.SUB_COUNT,
+            SOURCES.SUB_COUNT_BACKGROUND
+        };
+        public static List<SceneSourcePair> SUB_COUNTER_SOURCES = new List<SceneSourcePair>
+        {
+            SOURCES.SUB_COUNT,
+            SOURCES.SUB_COUNT_ACTIVE
+        };
     }
 
-    // *************************************************************************************************************************************
-    // ********************************************* CONSTANTS *****************************************************************************
     public static class SCENES
     {
         public static string OVERLAY_UNIVERSAL = "Overlay - Universal";
@@ -46,6 +90,7 @@ namespace Counters
         public static SceneSourcePair SOUND_FOLLOWER_INCREMENT = new SceneSourcePair(SCENES.OVERLAY_UNIVERSAL_COUNTERS, "Sound - Follower Increment");
     }
 
+    // ******************************************* Helper classes
     public class SceneSourcePair
     {
         public SceneSourcePair(string scene, string source)
@@ -58,10 +103,72 @@ namespace Counters
         public string Source { get; set; }
     }
 
+    public abstract class SoundPlayer
+    {
+        protected IInlineInvokeProxy _cph = null;
+        public SceneSourcePair Source { get; set; } = null;
+        public int SourceLength { get; set; } = 0;
+        public SoundPlayer(SceneSourcePair source, int sourceLength, IInlineInvokeProxy cph)
+        {
+            Source = source;
+            SourceLength = sourceLength;
+            _cph = cph;
+        }
+        public abstract void PrepareSound();
+        public abstract void FinishSound();
+        public abstract void PlaySound();
+    }
 
-    // *************************************************************************************************************************************
-    // ********************************************* COUNTER *****************************************************************************
-    public class Counter
+    public class SoundPlayerBasic : SoundPlayer
+    {
+        public SoundPlayerBasic(SceneSourcePair source, int sourceLength, IInlineInvokeProxy cph) : base(source, sourceLength, cph)
+        {
+        }
+
+        public override void PrepareSound()
+        {
+            _cph.ObsSetSourceVisibility(Source.Scene, Source.Source, true);
+        }
+        public override void PlaySound()
+        {
+            _cph.ObsMediaRestart(Source.Scene, Source.Source);
+        }
+
+        public override void FinishSound()
+        {
+            _cph.ObsSetSourceVisibility(Source.Scene, Source.Source, false);
+        }
+    }
+
+    public class SoundPlayerLoop : SoundPlayer
+    {
+        public SceneSourcePair LoopSource { get; set; } = null;
+        public SoundPlayerLoop(SceneSourcePair source, SceneSourcePair loopSource, int sourceLength, IInlineInvokeProxy cph) : base(source, sourceLength, cph)
+        {
+            LoopSource = loopSource;
+        }
+
+        public override void PrepareSound()
+        {
+            _cph.ObsSetSourceVisibility(Source.Scene, Source.Source, true);
+            _cph.ObsSetSourceVisibility(LoopSource.Scene, LoopSource.Source, true);
+            _cph.ObsMediaRestart(LoopSource.Scene, LoopSource.Source);
+        }
+        public override void PlaySound()
+        {
+        }
+
+        public override void FinishSound()
+        {
+            _cph.ObsMediaStop(LoopSource.Scene, LoopSource.Source);
+            _cph.ObsMediaRestart(Source.Scene, Source.Source);
+            _cph.Wait(SourceLength);
+            _cph.ObsSetSourceVisibility(LoopSource.Scene, LoopSource.Source, false);
+            _cph.ObsSetSourceVisibility(Source.Scene, Source.Source, false);
+        }
+    }
+
+    public class  DataHandler
     {
         private int _previousCount = 0;
         protected IInlineInvokeProxy _cph;
@@ -81,37 +188,31 @@ namespace Counters
                 _cph.SetGlobalVar(PreviousCountName, value, true);
             }
         }
-
         public int CurrentCount { get; set; } = 0;
         public string CurrentCountName { get; set; }
         public string PreviousCountName { get; set; }
-        public int LoopSpeed { get; set; } = 0;
-        public int EndLoopSpeed { get; set; } = 0;
-        public SceneSourcePair SoundSource { get; set; } = null;
         public List<SceneSourcePair> InactiveSources { get; set; } = new List<SceneSourcePair>();
         public List<SceneSourcePair> ActiveSources { get; set; } = new List<SceneSourcePair>();
         public List<SceneSourcePair> CounterSources { get; set; } = new List<SceneSourcePair>();
+        public Func<int, int> Convert { get; set; }
 
-        public Counter(string currentCountName, string previousCountName, List<SceneSourcePair> activeSources, List<SceneSourcePair> inactiveSources, List<SceneSourcePair> counterSources, int loopSpeed, IInlineInvokeProxy cph, int endLoopSpeed = -1)
+        public DataHandler(IInlineInvokeProxy cph, string currentCountName, string previousCountName, List<SceneSourcePair> inactiveSources, List<SceneSourcePair> activeSources, List<SceneSourcePair> counterSources, Func<int, int> convert)
         {
-            CurrentCountName = currentCountName;
-            ActiveSources = activeSources ?? new List<SceneSourcePair>();
-            InactiveSources = inactiveSources ?? new List<SceneSourcePair>();
-            CounterSources = counterSources ?? new List<SceneSourcePair>();
-            LoopSpeed = loopSpeed;
-            PreviousCountName = previousCountName;
             _cph = cph;
-            EndLoopSpeed = endLoopSpeed == -1 ? LoopSpeed : endLoopSpeed;
-            Initialize();
+            CurrentCountName = currentCountName;
+            PreviousCountName = previousCountName;
+            InactiveSources = inactiveSources;
+            ActiveSources = activeSources;
+            CounterSources = counterSources;
+            Convert = convert ?? ((number) => number);
         }
 
-        public void Initialize()
+        public virtual void Initialize()
         {
             // Don't forget to actually get the values before running this code. 
             if (!_cph.TryGetArg<int>(CurrentCountName, out int currentCountResult))
             {
                 _cph.LogError($"TryGetArg for {CurrentCountName} failed.");
-                PrintToCounterSource(0);
                 return;
             }
 
@@ -119,243 +220,7 @@ namespace Counters
             CurrentCount = currentCountResult;
         }
 
-        public virtual void GetValues()
-        {
-            if (!_cph.TryGetArg<int>(CurrentCountName, out int currentCountResult))
-            {
-                _cph.LogError($"TryGetArg for {CurrentCountName} failed.");
-                return;
-            }
-
-            CurrentCount += currentCountResult;
-        }
-
-        protected virtual void PrintToCounterSource(int number)
-        {
-            number = Convert(number);
-            foreach (SceneSourcePair pair in CounterSources)
-            {
-                _cph.ObsSetGdiText(pair.Scene, pair.Source, number.ToString());
-            }
-        }
-
-        protected virtual void PrintToCounterSource(int position, bool visible)
-        {
-            return;
-        }
-
-        protected virtual void SetUpdatingState(bool active)
-        {
-            foreach (SceneSourcePair pair in ActiveSources)
-            {
-                _cph.ObsSetSourceVisibility(pair.Scene, pair.Source, active);
-            }
-
-            foreach (SceneSourcePair pair in InactiveSources)
-            {
-                _cph.ObsSetSourceVisibility(pair.Scene, pair.Source, !active);
-            }
-        }
-
-        protected virtual void PrepareUpdate()
-        {
-            if (PreviousCount >= CurrentCount)
-            {
-                PrintToCounterSource(CurrentCount);
-            }
-
-            SetUpdatingState(true);
-            PrepareSound();
-        }
-
-        protected virtual void Update()
-        {
-            for (int i = Convert(PreviousCount); i <= Convert(CurrentCount); i++)
-            {
-                PrintToCounterSource(i);
-                PlaySound();
-                bool isLastIteration = i >= Convert(CurrentCount);
-                _cph.Wait(isLastIteration ? EndLoopSpeed : LoopSpeed);
-            }
-        }
-
-        protected virtual void FinishUpdate()
-        {
-            SetUpdatingState(false);
-            PreviousCount = CurrentCount;
-            FinishSound();
-        }
-
-        public virtual void UpdatePackage()
-        {
-            PrepareUpdate();
-            Update();
-            FinishUpdate();
-        }
-
-        protected virtual void PrepareSound()
-        {
-            return;
-        }
-
-        protected virtual void FinishSound()
-        {
-            return;
-        }
-
-        protected virtual void PlaySound()
-        {
-            return;
-        }
-
-        public virtual int Convert(int count)
-        {
-            return count;
-        }
-
-        public void Execute()
-        {
-            GetValues();
-            UpdatePackage();
-        }
-    }
-
-    public class TipCounter : Counter
-    {
-        private SceneSourcePair soundSource = new SceneSourcePair(SOURCES.SOUND_RING_INCREMENT.Scene, SOURCES.SOUND_RING_INCREMENT.Source);
-        private SceneSourcePair soundLoopSource = new SceneSourcePair(SOURCES.SOUND_MULTI_RING_GET.Scene, SOURCES.SOUND_MULTI_RING_GET.Source);
-        public static List<SceneSourcePair> ACTIVE_SOURCES = new List<SceneSourcePair>
-{
-    SOURCES.TIP_COUNT_ACTIVE,
-    SOURCES.TIP_COUNT_BACKGROUND_ACTIVE
-};
-        public static List<SceneSourcePair> INACTIVE_SOURCES = new List<SceneSourcePair>
-{
-    SOURCES.TIP_COUNT,
-    SOURCES.TIP_COUNT_BACKGROUND
-};
-        public static List<SceneSourcePair> COUNTER_SOURCES = new List<SceneSourcePair>
-{
-    SOURCES.TIP_COUNT,
-    SOURCES.TIP_COUNT_ACTIVE
-};
-        public TipCounter(IInlineInvokeProxy cph) : base("tipAmount", "previousTips", ACTIVE_SOURCES, INACTIVE_SOURCES, COUNTER_SOURCES, 1, cph)
-        {
-        }
-
-        public override int Convert(int count)
-        {
-            return count * 5;
-        }
-
-        protected override void PrepareSound()
-        {
-            _cph.ObsSetSourceVisibility(soundSource.Scene, soundSource.Source, true);
-            _cph.ObsSetSourceVisibility(soundLoopSource.Scene, soundLoopSource.Source, true);
-            _cph.ObsMediaRestart(soundLoopSource.Scene, soundLoopSource.Source);
-        }
-
-        protected override void FinishSound()
-        {
-            _cph.ObsMediaStop(soundLoopSource.Scene, soundLoopSource.Source);
-            _cph.ObsMediaRestart(soundSource.Scene, soundSource.Source);
-            _cph.Wait(500);
-            _cph.ObsSetSourceVisibility(soundLoopSource.Scene, soundLoopSource.Source, false);
-            _cph.ObsSetSourceVisibility(soundSource.Scene, soundSource.Source, false);
-        }
-
-        protected override void PlaySound()
-        {
-        }
-    }
-
-    public class BitCounter : Counter
-    {
-        private SceneSourcePair soundSource = new SceneSourcePair(SOURCES.SOUND_RING_INCREMENT.Scene, SOURCES.SOUND_RING_INCREMENT.Source);
-        private SceneSourcePair soundLoopSource = new SceneSourcePair(SOURCES.SOUND_MULTI_RING_GET.Scene, SOURCES.SOUND_MULTI_RING_GET.Source);
-        public static List<SceneSourcePair> ACTIVE_SOURCES = new List<SceneSourcePair>
-        {
-            SOURCES.BIT_COUNT_ACTIVE,
-            SOURCES.BIT_COUNT_BACKGROUND_ACTIVE
-        };
-        public static List<SceneSourcePair> INACTIVE_SOURCES = new List<SceneSourcePair>
-        {
-            SOURCES.BIT_COUNT,
-            SOURCES.BIT_COUNT_BACKGROUND
-        };
-        public static List<SceneSourcePair> COUNTER_SOURCES = new List<SceneSourcePair>
-        {
-            SOURCES.BIT_COUNT,
-            SOURCES.BIT_COUNT_ACTIVE
-        };
-        public BitCounter(IInlineInvokeProxy cph) : base("bits", "previousBits", ACTIVE_SOURCES, INACTIVE_SOURCES, COUNTER_SOURCES, 1, cph)
-        {
-        }
-
-        public override int Convert(int count)
-        {
-            return count / 2;
-        }
-
-        protected override void PrepareSound()
-        {
-            _cph.ObsSetSourceVisibility(soundSource.Scene, soundSource.Source, true);
-            _cph.ObsSetSourceVisibility(soundLoopSource.Scene, soundLoopSource.Source, true);
-            _cph.ObsMediaRestart(soundLoopSource.Scene, soundLoopSource.Source);
-        }
-
-        protected override void FinishSound()
-        {
-            _cph.ObsMediaStop(soundLoopSource.Scene, soundLoopSource.Source);
-            _cph.ObsMediaRestart(soundSource.Scene, soundSource.Source);
-            _cph.Wait(500);
-            _cph.ObsSetSourceVisibility(soundLoopSource.Scene, soundLoopSource.Source, false);
-            _cph.ObsSetSourceVisibility(soundSource.Scene, soundSource.Source, false);
-        }
-
-        protected override void PlaySound()
-        {
-        }
-    }
-
-    public class StarCounter : Counter
-    {
-        private SceneSourcePair soundSource = new SceneSourcePair(SOURCES.SOUND_SUB_INCREMENT.Scene, SOURCES.SOUND_SUB_INCREMENT.Source);
-        public static List<SceneSourcePair> ACTIVE_SOURCES = new List<SceneSourcePair>
-        {
-            SOURCES.SUB_COUNT_ACTIVE,
-            SOURCES.SUB_COUNT_BACKGROUND_ACTIVE
-        };
-        public static List<SceneSourcePair> INACTIVE_SOURCES = new List<SceneSourcePair>
-        {
-            SOURCES.SUB_COUNT,
-            SOURCES.SUB_COUNT_BACKGROUND
-        };
-        public static List<SceneSourcePair> COUNTER_SOURCES = new List<SceneSourcePair>
-        {
-            SOURCES.SUB_COUNT,
-            SOURCES.SUB_COUNT_ACTIVE
-        };
-        public StarCounter(IInlineInvokeProxy cph) : base("subscriberCount", "savedSubscriberCount", ACTIVE_SOURCES, INACTIVE_SOURCES, COUNTER_SOURCES, 500, cph, 2000)
-        {
-        }
-
-        protected override void PrepareSound()
-        {
-            _cph.ObsSetSourceVisibility(soundSource.Scene, soundSource.Source, true);
-        }
-
-        protected override void FinishSound()
-        {
-            _cph.ObsSetSourceVisibility(soundSource.Scene, soundSource.Source, false);
-        }
-
-        protected override void PlaySound()
-        {
-            _cph.ObsMediaRestart(soundSource.Scene, soundSource.Source);
-        }
-
-        public override void GetValues()
+        public virtual void UpdateData()
         {
             if (!_cph.TryGetArg<int>(CurrentCountName, out int currentCountResult))
             {
@@ -364,6 +229,109 @@ namespace Counters
             }
 
             CurrentCount = currentCountResult;
+        }
+    }
+
+    public class DataHandlerIncremental : DataHandler
+    {
+        public DataHandlerIncremental(IInlineInvokeProxy cph, string currentCountName, string previousCountName, List<SceneSourcePair> inactiveSources, List<SceneSourcePair> activeSources, List<SceneSourcePair> counterSources, Func<int, int> convert) : base(cph, currentCountName, previousCountName, inactiveSources, activeSources, counterSources, convert)
+        {
+        }
+        public override void UpdateData()
+        {
+            if (!_cph.TryGetArg<int>(CurrentCountName, out int currentCountResult))
+            {
+                _cph.LogError($"TryGetArg for {CurrentCountName} failed.");
+                return;
+            }
+            CurrentCount += currentCountResult;
+        }
+    }
+
+    // *************************************************************************************************************************************
+    // ********************************************* COUNTER *****************************************************************************
+    public class Counter
+    {
+        protected IInlineInvokeProxy _cph;
+        public int LoopSpeed { get; set; } = 0;
+        public SoundPlayer SoundPlayer { get; set; } = null;
+        public DataHandler DataHandler { get; set; } = null;
+
+        public Counter(IInlineInvokeProxy cph, DataHandler dataHandler, int loopSpeed, SoundPlayer soundPlayer)
+        {
+            _cph = cph;
+            DataHandler = dataHandler;
+            LoopSpeed = loopSpeed;
+            SoundPlayer = soundPlayer;
+        }        
+
+        protected virtual void WriteToSources(List<SceneSourcePair> sources, int number)
+        {
+            number = DataHandler.Convert(number);
+            foreach (SceneSourcePair pair in sources)
+            {
+                _cph.ObsSetGdiText(pair.Scene, pair.Source, number.ToString());
+            }
+        }
+
+        protected virtual void WriteToSource(SceneSourcePair source, bool visible, int position = -1)
+        {
+            return;
+        }
+
+        protected virtual void SetWriteState(bool active)
+        {
+            foreach (SceneSourcePair pair in DataHandler.ActiveSources)
+            {
+                _cph.ObsSetSourceVisibility(pair.Scene, pair.Source, active);
+            }
+
+            foreach (SceneSourcePair pair in DataHandler.InactiveSources)
+            {
+                _cph.ObsSetSourceVisibility(pair.Scene, pair.Source, !active);
+            }
+        }
+
+        protected virtual void PrepareWrite()
+        {
+            if (DataHandler.PreviousCount >= DataHandler.CurrentCount)
+            {
+                WriteToSources(DataHandler.CounterSources, DataHandler.CurrentCount);
+            }
+
+            SetWriteState(true);
+            SoundPlayer.PrepareSound();
+        }
+
+        protected virtual void ApplyWrite()
+        {
+            for (int i = DataHandler.Convert(DataHandler.PreviousCount); i <= DataHandler.Convert(DataHandler.CurrentCount); i++)
+            {
+                WriteToSources(DataHandler.CounterSources, i);
+                SoundPlayer.PlaySound();
+                bool isLastIteration = i >= DataHandler.Convert(DataHandler.CurrentCount);
+                _cph.Wait(isLastIteration ? SoundPlayer.SourceLength : LoopSpeed);
+            }
+        }
+
+        protected virtual void FinishWrite()
+        {
+            SetWriteState(false);
+            DataHandler.PreviousCount = DataHandler.CurrentCount;
+            SoundPlayer.FinishSound();
+        }
+
+        public virtual void WriteToOBS()
+        {
+            PrepareWrite();
+            ApplyWrite();
+            FinishWrite();
+        }
+
+        public void Execute()
+        {
+            DataHandler.UpdateData();
+            WriteToOBS();
         }
     }
 
@@ -380,17 +348,6 @@ namespace Counters
             SoundIncrement = soundIncrement;
             SoundDecrement = soundDecrement;
             Mod = mod;
-        }
-
-        public override void GetValues()
-        {
-            if (!_cph.TryGetArg<int>(CurrentCountName, out int currentCountResult))
-            {
-                _cph.LogError($"TryGetArg for {CurrentCountName} failed.");
-                return;
-            }
-
-            CurrentCount = currentCountResult;
         }
 
         public List<int> GetAddSequence(int lastCount, int newCount)
@@ -427,22 +384,19 @@ namespace Counters
             _cph.ObsSetSourceVisibility(ItemSource.Scene, ItemSource.Source.Replace("#", position.ToString()), visible);
         }
 
-        protected override void PrintToCounterSource(int position, bool visible)
+        protected override void WriteToSources(int position, bool visible)
         {
-            _cph.LogInfo(ItemSource.Scene);
-            _cph.LogInfo(ItemSource.Source);
-            _cph.LogInfo(ItemSource.Source.Replace("#", position.ToString()));
             _cph.ObsSetSourceVisibility(ItemSource.Scene, ItemSource.Source.Replace("#", position.ToString()), visible);
         }
 
-        protected override void PrepareUpdate()
+        protected override void PrepareWrite()
         {
             if (PreviousCount >= CurrentCount)
             {
                 Refresh();
             }
 
-            SetUpdatingState(true);
+            SetWriteState(true);
             PrepareSound();
         }
 
@@ -486,19 +440,7 @@ namespace Counters
             return true;
         }
 
-        protected override void PrepareSound()
-        {
-            _cph.ObsSetSourceVisibility(SoundIncrement.Scene, SoundIncrement.Source, true);
-            _cph.ObsSetSourceVisibility(SoundDecrement.Scene, SoundDecrement.Source, true);
-        }
-
-        protected override void FinishSound()
-        {
-            _cph.ObsSetSourceVisibility(SoundIncrement.Scene, SoundIncrement.Source, false);
-            _cph.ObsSetSourceVisibility(SoundDecrement.Scene, SoundDecrement.Source, false);
-        }
-
-        protected override void Update()
+        protected override void ApplyWrite()
         {
             var removeSequence = GetRemoveSequence(PreviousCount, CurrentCount);
             foreach (int position in removeSequence)
