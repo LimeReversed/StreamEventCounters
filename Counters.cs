@@ -85,7 +85,7 @@ namespace Counters
             var followDataHandler = new DataHandlerWithItem(CPH, "followerCount", "lastFollowerCount", null, null, null, SOURCES.HEART_FULL, null, null);
             var followerIncrementSound = new SoundPlayerBasic(CPH, SOURCES.SOUND_FOLLOWER_INCREMENT, 400);
             var followerDecrementSound = new SoundPlayerBasic(CPH, SOURCES.SOUND_FOLLOWER_DECREMENT, 400);
-            followCounter = new CounterLoopable(CPH, followDataHandler, 200, followerIncrementSound, followerDecrementSound, 10);
+            followCounter = new CounterLoopable(CPH, followDataHandler, 400, followerIncrementSound, followerDecrementSound, 10);
         }
     }
 
@@ -124,7 +124,6 @@ namespace Counters
         public static SceneSourcePair SOUND_FOLLOWER_INCREMENT = new SceneSourcePair(SCENES.OVERLAY_UNIVERSAL_COUNTERS, "Sound - Follower Increment");
     }
 
-    // ******************************************* Helper classes
     public class SceneSourcePair
     {
         public SceneSourcePair(string scene, string source)
@@ -241,6 +240,7 @@ namespace Counters
             CounterSources = counterSources ?? new List<SceneSourcePair>();
             Convert = convert ?? ((number) => number);
             UpdateCount = updateCount ?? ((current, updated) => updated);
+            Initialize();
         }
 
         public virtual void Initialize()
