@@ -29,13 +29,13 @@ namespace Test_Chamber
             return result;
         }
 
-        public bool ItemsHaveSameVisibility(Dictionary<string, Source> dict1, Dictionary<string, Source> dict2)
+        public bool ItemsAreEqual(Dictionary<string, Source> dict1, Dictionary<string, Source> dict2)
         {
             if (dict1.Count != dict2.Count)
                 return false;
             foreach (var kvp in dict1)
             {
-                if (dict2[kvp.Key].visible != dict1[kvp.Key].visible)
+                if (!dict2[kvp.Key].Equals(dict1[kvp.Key]))
                     return false;
             }
             return true;
@@ -97,7 +97,7 @@ namespace Test_Chamber
                 { "Heart 0 Full", new Source( null ,false) }
             };
 
-            Assert.IsTrue(ItemsHaveSameVisibility(expectedItems, allItems));
+            Assert.IsTrue(ItemsAreEqual(expectedItems, allItems));
         }
 
         [TestMethod]
@@ -126,32 +126,71 @@ namespace Test_Chamber
                 { "Heart 0 Full", new Source( null ,false) }
             };
 
-            Assert.IsTrue(ItemsHaveSameVisibility(expectedItems, allItems));
+            Assert.IsTrue(ItemsAreEqual(expectedItems, allItems));
         }
 
         [TestMethod]
         public void Execute_ThreeTimes_ShowsCorrectHearts()
         {
-            // Then maybe one that refreshes on on argument before execute to see what that gets. 
+            CPH.SetGlobalVar(MockCPH.lastFollowerCount, 15);
+            CPH.SetArg(MockCPH.followerCount, 18);
+            DataHandlerWithItem currentDataHandler = currentCounter.DataHandler as DataHandlerWithItem;
+            currentCounter.ResetToLast();
 
-            //CPH.SetGlobalVar(MockCPH.lastFollowerCount, 15);
-            //CPH.SetArg(MockCPH.followerCount, 25);
-            //DataHandlerWithItem currentDataHandler = currentCounter.DataHandler as DataHandlerWithItem;
-            //currentCounter.Refresh();
+            currentCounter.Execute();
+            currentCounter.Execute();
+            currentCounter.Execute();
 
-            //currentCounter.Execute();
+            SceneSourcePair currentSources = currentDataHandler.ItemSource;
+            var allItems = GetAllCountItems(currentSources, 10, CPH);
+            var expectedItems = new Dictionary<string, Source>()
+            {
+                { "Heart 1 Full", new Source( null ,true) },
+                { "Heart 2 Full", new Source( null ,true) },
+                { "Heart 3 Full", new Source( null ,true) },
+                { "Heart 4 Full", new Source( null ,true) },
+                { "Heart 5 Full", new Source( null ,true) },
+                { "Heart 6 Full", new Source( null ,true) },
+                { "Heart 7 Full", new Source( null ,true) },
+                { "Heart 8 Full", new Source( null ,true) },
+                { "Heart 9 Full", new Source( null ,false) },
+                { "Heart 0 Full", new Source( null ,false) }
+            };
 
-            //SceneSourcePair currentSources = currentDataHandler.ItemSource;
-            //var allItems = GetAllCountItems(currentSources, 10, CPH);
-            //var expectedItems = new List<bool>() { true, true, true, true, true, false, false, false, false, false };
+            Assert.IsTrue(ItemsAreEqual(expectedItems, allItems));
+        }
 
-            //Console.WriteLine("allItems");
-            //PrintList(allItems);
+        [TestMethod]
+        public void Execute_UpdateThreeTimes_ShowsCorrectHearts()
+        {
+            CPH.SetGlobalVar(MockCPH.lastFollowerCount, 15);
+            CPH.SetArg(MockCPH.followerCount, 18);
+            DataHandlerWithItem currentDataHandler = currentCounter.DataHandler as DataHandlerWithItem;
+            currentCounter.ResetToLast();
 
-            //Console.WriteLine("expectedItems");
-            //PrintList(expectedItems);
+            currentCounter.Execute();
+            CPH.SetArg(MockCPH.followerCount, 22);
+            currentCounter.Execute();
+            CPH.SetArg(MockCPH.followerCount, 29);
+            currentCounter.Execute();
 
-            //CollectionAssert.AreEqual(expectedItems, allItems);
+            SceneSourcePair currentSources = currentDataHandler.ItemSource;
+            var allItems = GetAllCountItems(currentSources, 10, CPH);
+            var expectedItems = new Dictionary<string, Source>()
+            {
+                { "Heart 1 Full", new Source( null ,true) },
+                { "Heart 2 Full", new Source( null ,true) },
+                { "Heart 3 Full", new Source( null ,true) },
+                { "Heart 4 Full", new Source( null ,true) },
+                { "Heart 5 Full", new Source( null ,true) },
+                { "Heart 6 Full", new Source( null ,true) },
+                { "Heart 7 Full", new Source( null ,true) },
+                { "Heart 8 Full", new Source( null ,true) },
+                { "Heart 9 Full", new Source( null ,true) },
+                { "Heart 0 Full", new Source( null ,false) }
+            };
+
+            Assert.IsTrue(ItemsAreEqual(expectedItems, allItems));
         }
     }
 }
