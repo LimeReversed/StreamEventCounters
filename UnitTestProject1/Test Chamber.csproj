@@ -62,6 +62,7 @@
     <Compile Include="BitCounterTest.cs" />
     <Compile Include="MockCPH.cs" />
     <Compile Include="SubCounterTest.cs" />
+    <Compile Include="FollowerCounterTest.cs" />
     <Compile Include="TipCounterTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

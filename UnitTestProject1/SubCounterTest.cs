@@ -50,7 +50,7 @@ namespace Test_Chamber
 
             CounterManager.subCounter.Execute();
 
-            bool result = CPH._sources.TryGetValue(SOURCES.SUB_COUNT.Source, out Source<string> afterValue);
+            bool result = CPH._sources.TryGetValue(SOURCES.SUB_COUNT.Source, out Source afterValue);
             int sourceContentAfter = Convert.ToInt16(result ? afterValue.Value : "-1");
 
             Assert.AreEqual(7, sourceContentAfter);
@@ -63,7 +63,7 @@ namespace Test_Chamber
             CPH.SetArg(MockCPH.subscriberCount, 7);
             CPH.SetGlobalVar(MockCPH.lastSubscriberCount, 5);
 
-            bool result = CPH._sources.TryGetValue(SOURCES.SUB_COUNT.Source, out Source<string> beforeValue);
+            bool result = CPH._sources.TryGetValue(SOURCES.SUB_COUNT.Source, out Source beforeValue);
             int sourceContentBefore = Convert.ToInt16(result ? beforeValue.Value : "-1");
             CounterManager.subCounter.Execute();
 

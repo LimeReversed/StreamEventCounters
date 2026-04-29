@@ -1,0 +1,157 @@
+﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
+using Counters;
+using System.Collections.Generic;
+using System.Collections;
+using Streamer.bot.Plugin.Interface;
+
+namespace Test_Chamber
+{
+    [TestClass]
+    public class FollowerCounterTest
+    {
+        MockCPH CPH = null;
+        CounterLoopable currentCounter = null;
+
+        public Dictionary<string, Source> GetAllCountItems(SceneSourcePair pair, int mod, MockCPH cph)
+        {
+            var result = new Dictionary<string, Source>();
+
+            for (int i = 0; i < mod; i++)
+            {
+                int position = (i + 1) % mod;
+                var sourceName = pair.Source.Replace("#", position.ToString());
+
+                result[sourceName] = cph._sources[sourceName];
+
+            }
+
+            return result;
+        }
+
+        public bool ItemsHaveSameVisibility(Dictionary<string, Source> dict1, Dictionary<string, Source> dict2)
+        {
+            if (dict1.Count != dict2.Count)
+                return false;
+            foreach (var kvp in dict1)
+            {
+                if (dict2[kvp.Key].visible != dict1[kvp.Key].visible)
+                    return false;
+            }
+            return true;
+        }
+
+        public void PrintList<T>(List<T> list)
+        {
+            foreach (T item in list)
+            {
+                Console.Write(item.ToString() + " ");
+            }
+            Console.WriteLine();
+        }
+
+        [TestInitialize()]
+        public void Initialize()
+        {
+            CPH = new MockCPH();
+            CounterManager.InitializeAll(CPH);
+            currentCounter = CounterManager.followCounter;
+        }
+
+        [TestMethod]
+        public void Execute_GoesFrom15To18_CurrentCountIs18()
+        {
+            CPH.SetGlobalVar(MockCPH.lastFollowerCount, 15);
+            CPH.SetArg(MockCPH.followerCount, 18);
+
+            currentCounter.Execute();
+
+            int currentCount = currentCounter.DataHandler.CurrentCount;
+
+            Assert.AreEqual(18, currentCount);
+        }
+
+        [TestMethod]
+        public void Execute_GoesFrom15To18_Shows8Hearts()
+        {
+            CPH.SetGlobalVar(MockCPH.lastFollowerCount, 15);
+            CPH.SetArg(MockCPH.followerCount, 18);
+            DataHandlerWithItem currentDataHandler = currentCounter.DataHandler as DataHandlerWithItem;
+            currentCounter.ResetToLast();
+
+            currentCounter.Execute();
+
+            SceneSourcePair currentSources = currentDataHandler.ItemSource;
+            var allItems = GetAllCountItems(currentSources, 10, CPH);
+            var expectedItems = new Dictionary<string, Source>()
+            {
+                { "Heart 1 Full", new Source( null ,true) },
+                { "Heart 2 Full", new Source( null ,true) },
+                { "Heart 3 Full", new Source( null ,true) },
+                { "Heart 4 Full", new Source( null ,true) },
+                { "Heart 5 Full", new Source( null ,true) },
+                { "Heart 6 Full", new Source( null ,true) },
+                { "Heart 7 Full", new Source( null ,true) },
+                { "Heart 8 Full", new Source( null ,true) },
+                { "Heart 9 Full", new Source( null ,false) },
+                { "Heart 0 Full", new Source( null ,false) }
+            };
+
+            Assert.IsTrue(ItemsHaveSameVisibility(expectedItems, allItems));
+        }
+
+        [TestMethod]
+        public void Execute_GoesFrom15To25_Shows5Hearts()
+        {
+            CPH.SetGlobalVar(MockCPH.lastFollowerCount, 15);
+            CPH.SetArg(MockCPH.followerCount, 25);
+            DataHandlerWithItem currentDataHandler = currentCounter.DataHandler as DataHandlerWithItem;
+            currentCounter.ResetToLast();
+
+            currentCounter.Execute();
+
+            SceneSourcePair currentSources = currentDataHandler.ItemSource;
+            var allItems = GetAllCountItems(currentSources, 10, CPH);
+            var expectedItems = new Dictionary<string, Source>()
+            {
+                { "Heart 1 Full", new Source( null ,true) },
+                { "Heart 2 Full", new Source( null ,true) },
+                { "Heart 3 Full", new Source( null ,true) },
+                { "Heart 4 Full", new Source( null ,true) },
+                { "Heart 5 Full", new Source( null ,true) },
+                { "Heart 6 Full", new Source( null ,false) },
+                { "Heart 7 Full", new Source( null ,false) },
+                { "Heart 8 Full", new Source( null ,false) },
+                { "Heart 9 Full", new Source( null ,false) },
+                { "Heart 0 Full", new Source( null ,false) }
+            };
+
+            Assert.IsTrue(ItemsHaveSameVisibility(expectedItems, allItems));
+        }
+
+        [TestMethod]
+        public void Execute_ThreeTimes_ShowsCorrectHearts()
+        {
+            // Then maybe one that refreshes on on argument before execute to see what that gets. 
+
+            //CPH.SetGlobalVar(MockCPH.lastFollowerCount, 15);
+            //CPH.SetArg(MockCPH.followerCount, 25);
+            //DataHandlerWithItem currentDataHandler = currentCounter.DataHandler as DataHandlerWithItem;
+            //currentCounter.Refresh();
+
+            //currentCounter.Execute();
+
+            //SceneSourcePair currentSources = currentDataHandler.ItemSource;
+            //var allItems = GetAllCountItems(currentSources, 10, CPH);
+            //var expectedItems = new List<bool>() { true, true, true, true, true, false, false, false, false, false };
+
+            //Console.WriteLine("allItems");
+            //PrintList(allItems);
+
+            //Console.WriteLine("expectedItems");
+            //PrintList(expectedItems);
+
+            //CollectionAssert.AreEqual(expectedItems, allItems);
+        }
+    }
+}

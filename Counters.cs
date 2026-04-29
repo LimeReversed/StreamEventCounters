@@ -432,6 +432,25 @@ namespace Counters
             return true;
         }
 
+        public bool ResetToLast()
+        {
+            int heartCount = DataHandler.PreviousCount % Mod == 0 ? Mod : DataHandler.PreviousCount % Mod;
+            for (int i = 1; i <= Mod; i++)
+            {
+                int position = i % Mod;
+                if (i > 0 && i <= heartCount)
+                {
+                    WriteToSource((DataHandler as DataHandlerWithItem).ItemSource, true, position);
+                }
+                else
+                {
+                    WriteToSource((DataHandler as DataHandlerWithItem).ItemSource, false, position);
+                }
+            }
+
+            return true;
+        }
+
         public bool Clear()
         {
             for (int i = 0; i < Mod; i++)

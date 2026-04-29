@@ -3,26 +3,39 @@ using Streamer.bot.Plugin.Interface;
 using Streamer.bot.Plugin.Interface.Enums;
 using Streamer.bot.Plugin.Interface.Model;
 using System;
+using System.CodeDom;
 using System.Collections.Generic;
+using System.Security.Policy;
 using Twitch.Common.Models.Api;
 
 namespace Test_Chamber
 {
-    public class Source<T>
+    public class Source: IEquatable<Source>
     {
-        public virtual T Value { get; set; }
+        public virtual string Value { get; set; }
         public bool visible = false;
-    }
 
-    public class Source : Source<object>
-    {
+        public Source(string value, bool visible)
+        {
+            Value = value;
+            this.visible = visible;
+        }
+
+        public bool Equals(Source other)
+        {
+            if (other == null)
+                return false;
+            if (other.Value == null && Value == null && other.visible == visible)
+                return true;
+            return visible == other.visible && Value.Equals(other.Value);
+        }
     }
 
     public class MockCPH : IInlineInvokeProxy
     {
         public readonly Dictionary<string, object> _args = new Dictionary<string, object>();
         public readonly Dictionary<string, object> _globalVars = new Dictionary<string, object>();
-        public readonly Dictionary<string, Source<string>> _sources = new Dictionary<string, Source<string>>();
+        public readonly Dictionary<string, Source> _sources = new Dictionary<string, Source>();
         public static string subscriberCount = "subscriberCount";
         public static string lastSubscriberCount = "lastSubscriberCount";
         public static string followerCount = "followerCount";
@@ -87,7 +100,7 @@ namespace Test_Chamber
             }
             else
             {
-                _sources[source] = new Source<string> { visible = visible };
+                _sources[source] = new Source(null, visible);
             }
 
         }
@@ -101,7 +114,7 @@ namespace Test_Chamber
             }
             else
             {
-                _sources[source] = new Source<string> { Value = text };
+                _sources[source] = new Source(text, true);
             }
         }
 

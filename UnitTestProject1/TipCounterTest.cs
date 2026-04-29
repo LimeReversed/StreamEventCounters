@@ -80,7 +80,7 @@ namespace Test_Chamber
 
             currentCounter.Execute();
 
-            bool result = CPH._sources.TryGetValue(SOURCES.TIP_COUNT.Source, out Source<string> afterValue);
+            bool result = CPH._sources.TryGetValue(SOURCES.TIP_COUNT.Source, out Source afterValue);
             int sourceCountAfter = Convert.ToInt16(result ? afterValue.Value : "-1");
 
             Assert.AreEqual(50, sourceCountAfter);
@@ -94,7 +94,7 @@ namespace Test_Chamber
             CPH.SetArg(MockCPH.tipAmount, 10);
 
 
-            bool result = CPH._sources.TryGetValue(SOURCES.TIP_COUNT.Source, out Source<string> beforeValue);
+            bool result = CPH._sources.TryGetValue(SOURCES.TIP_COUNT.Source, out Source beforeValue);
             int sourceCountAfter = Convert.ToInt16(result ? beforeValue.Value : "-1");
             currentCounter.Execute();
 
@@ -114,7 +114,7 @@ namespace Test_Chamber
             currentCounter.Execute();
             currentCounter.Execute();
 
-            bool result = CPH._sources.TryGetValue(SOURCES.TIP_COUNT.Source, out Source<string> afterValue);
+            bool result = CPH._sources.TryGetValue(SOURCES.TIP_COUNT.Source, out Source afterValue);
             int sourceContentAfter = Convert.ToInt16(result ? afterValue.Value : "-1");
 
             Assert.AreEqual(150, sourceContentAfter);
