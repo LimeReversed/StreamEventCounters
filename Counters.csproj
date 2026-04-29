@@ -32,6 +32,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Streamer.bot.Common, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null" />
     <Reference Include="Streamer.bot.Plugin.Interface">
       <HintPath>C:\Users\limer\Desktop\Streamer.bot-x64-1.0.4\Streamer.bot.Plugin.Interface.dll</HintPath>
     </Reference>
@@ -43,10 +44,10 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml" />
+    <Reference Include="Twitch.Common, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Counters.cs" />
-    <Compile Include="MockCPH.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
