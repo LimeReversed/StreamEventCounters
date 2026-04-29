@@ -260,7 +260,7 @@ namespace Counters
         {
             // Don't forget to actually get the values before running this code. 
             UpdateData();
-            InitialCount = PreviousCount; // Expected to be already converted.
+            InitialCount = PreviousCount;
         }
 
         public virtual void UpdateData()

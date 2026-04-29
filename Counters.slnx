@@ -1,6 +1,4 @@
 <Solution>
-  <Project Path="../Test_Chamber/Test_Chamber.csproj" Id="289b0152-20a3-4627-a47c-5643bb2330a6">
-    <BuildType Project="Debug" />
-  </Project>
   <Project Path="Counters.csproj" Id="b3503088-1fdd-45cd-beb5-5780ea919d3f" />
+  <Project Path="UnitTestProject1/Test Chamber.csproj" Id="a02714f6-d8f4-4954-b9cc-a4c52208ab07" />
 </Solution>
