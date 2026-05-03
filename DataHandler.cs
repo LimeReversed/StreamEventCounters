@@ -54,7 +54,7 @@ namespace Counters
         public virtual void Initialize()
         {
             // Don't forget to actually get the values before running this code. 
-            UpdateData(RefreshCountArg);
+            UpdateData(PreviousCountArg);
             InitialCount = PreviousCount;
         }
 

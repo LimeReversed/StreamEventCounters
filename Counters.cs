@@ -32,6 +32,13 @@ namespace Counters
             return;
         }
 
+        public virtual bool ResetToLast()
+        {
+            WriteToSources(DataHandler.CounterSources, DataHandler.PreviousCount);
+
+            return true;
+        }
+
         protected virtual void SetWriteState(bool active)
         {
             foreach (SceneSourcePair pair in DataHandler.ActiveSources)
@@ -162,7 +169,7 @@ namespace Counters
             return true;
         }
 
-        public bool ResetToLast()
+        public override bool ResetToLast()
         {
             int heartCount = DataHandler.PreviousCount % Mod == 0 ? Mod : DataHandler.PreviousCount % Mod;
             for (int i = 1; i <= Mod; i++)
