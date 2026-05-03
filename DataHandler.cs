@@ -15,14 +15,14 @@ namespace Counters
         {
             get
             {
-                return _cph.GetGlobalVar<int>(PreviousCountName, true);
+                return _cph.GetGlobalVar<int>(PreviousCountArg, true);
 
             }
 
             set
             {
                 _previousCount = value;
-                _cph.SetGlobalVar(PreviousCountName, value, true);
+                _cph.SetGlobalVar(PreviousCountArg, value, true);
             }
         }
         public int CurrentCount {
@@ -30,19 +30,19 @@ namespace Counters
             set { _currentCount = value; }
         }
 
-        public string CurrentCountName { get; set; }
-        public string PreviousCountName { get; set; }
+        public string RefreshCountArg { get; set; }
+        public string PreviousCountArg { get; set; }
         public List<SceneSourcePair> InactiveSources { get; set; }
         public List<SceneSourcePair> ActiveSources { get; set; }
         public List<SceneSourcePair> CounterSources { get; set; }
         public Func<int, int> Convert { get; set; }
         public Func<int, int, int> UpdateCount { get; set; }
 
-        public DataHandler(IInlineInvokeProxy cph, string currentCountName, string previousCountName, List<SceneSourcePair> inactiveSources, List<SceneSourcePair> activeSources, List<SceneSourcePair> counterSources, Func<int, int> convert, Func<int, int, int> updateCount)
+        public DataHandler(IInlineInvokeProxy cph, string refreshCountArg, string previousCountArg, List<SceneSourcePair> inactiveSources, List<SceneSourcePair> activeSources, List<SceneSourcePair> counterSources, Func<int, int> convert, Func<int, int, int> updateCount)
         {
             _cph = cph;
-            CurrentCountName = currentCountName;
-            PreviousCountName = previousCountName;
+            RefreshCountArg = refreshCountArg;
+            PreviousCountArg = previousCountArg;
             InactiveSources = inactiveSources ?? new List<SceneSourcePair>();
             ActiveSources = activeSources ?? new List<SceneSourcePair>();
             CounterSources = counterSources ?? new List<SceneSourcePair>();
@@ -54,19 +54,24 @@ namespace Counters
         public virtual void Initialize()
         {
             // Don't forget to actually get the values before running this code. 
-            UpdateData();
+            UpdateData(RefreshCountArg);
             InitialCount = PreviousCount;
         }
 
-        public virtual void UpdateData()
+        public virtual void UpdateData(string argName)
         {
-            if (!_cph.TryGetArg<int>(CurrentCountName, out int currentCountResult))
+            if (!_cph.TryGetArg<int>(argName, out int currentCountResult))
             {
-                _cph.LogError($"TryGetArg for {CurrentCountName} failed.");
+                _cph.LogError($"TryGetArg for {argName} failed.");
                 return;
             }
 
             CurrentCount = UpdateCount(_currentCount, currentCountResult);
+        }
+
+        public virtual void UpdateData(int newCount)
+        {
+            CurrentCount = UpdateCount(_currentCount, newCount);
         }
     }
 

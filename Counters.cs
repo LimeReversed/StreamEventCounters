@@ -81,9 +81,21 @@ namespace Counters
             FinishWrite();
         }
 
+        public void Execute(string argName)
+        {
+            DataHandler.UpdateData(argName);
+            WriteToOBS();
+        }
+
+        public void Execute(int newCount)
+        {
+            DataHandler.UpdateData(newCount);
+            WriteToOBS();
+        }
+
         public void Execute()
         {
-            DataHandler.UpdateData();
+            DataHandler.UpdateData(DataHandler.RefreshCountArg);
             WriteToOBS();
         }
     }
@@ -132,7 +144,7 @@ namespace Counters
 
         public bool Refresh()
         {
-            DataHandler.UpdateData();
+            DataHandler.UpdateData(DataHandler.RefreshCountArg);
             int heartCount = DataHandler.CurrentCount % Mod == 0 ? Mod : DataHandler.CurrentCount % Mod;
             for (int i = 1; i <= Mod; i++)
             {
