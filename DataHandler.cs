@@ -6,22 +6,22 @@ namespace Counters
 {
     public class DataHandler
     {
-        protected int _lastCount = 0;
+        protected int _previousCount = 0;
         protected IInlineInvokeProxy _cph;
 
         protected int Count { get; set; }
 
-        protected int LastCount
+        protected int PreviousCount
         {
             get
             {
-                return _lastCount;
+                return _previousCount;
             }
 
             set
             {
-                _lastCount = value;
-                _cph.SetGlobalVar(LastCountArg, value, true);
+                _previousCount = value;
+                _cph.SetGlobalVar(PreviousCountArg, value, true);
             }
         }
 
@@ -32,7 +32,7 @@ namespace Counters
         /// </summary>
         public int LastCountOutput
         {
-            get { return Convert(_lastCount); }
+            get { return Convert(_previousCount); }
         }
 
         /// <summary>
@@ -42,18 +42,25 @@ namespace Counters
             get { return Convert(Count); }
         }
 
+        /// <summary>
+        /// The name of the argument that gathers the new total of a count. 
+        /// </summary>
         public string RefreshCountArg { get; set; }
-        public string LastCountArg { get; set; }
+
+        /// <summary>
+        /// The name of the argument that gathers the previously saved count. 
+        /// </summary>
+        protected string PreviousCountArg { get; set; }
         public List<SceneSourcePair> InactiveSources { get; set; }
         public List<SceneSourcePair> ActiveSources { get; set; }
         public List<SceneSourcePair> CounterSources { get; set; }
         public Func<int, int> Convert { get; set; }
 
-        public DataHandler(IInlineInvokeProxy cph, string refreshCountArg, string lastCountArg, List<SceneSourcePair> inactiveSources, List<SceneSourcePair> activeSources, List<SceneSourcePair> counterSources, Func<int, int> convert)
+        public DataHandler(IInlineInvokeProxy cph, string refreshCountArg, string previousCountArg, List<SceneSourcePair> inactiveSources, List<SceneSourcePair> activeSources, List<SceneSourcePair> counterSources, Func<int, int> convert)
         {
             _cph = cph;
             RefreshCountArg = refreshCountArg;
-            LastCountArg = lastCountArg;
+            PreviousCountArg = previousCountArg;
             InactiveSources = inactiveSources ?? new List<SceneSourcePair>();
             ActiveSources = activeSources ?? new List<SceneSourcePair>();
             CounterSources = counterSources ?? new List<SceneSourcePair>();
@@ -63,9 +70,9 @@ namespace Counters
 
         public virtual void Initialize()
         {
-            LastCount = _cph.GetGlobalVar<int>(LastCountArg, true);
-            InitialCount = LastCount;
-            Count = LastCount;
+            PreviousCount = _cph.GetGlobalVar<int>(PreviousCountArg, true);
+            InitialCount = PreviousCount;
+            Count = PreviousCount;
         }
 
         public virtual void UpdateCount(string argName)
@@ -76,7 +83,7 @@ namespace Counters
                 return;
             }
 
-            LastCount = Count;
+            PreviousCount = Count;
             Count = currentCountResult;
         }
 
@@ -88,19 +95,19 @@ namespace Counters
                 return;
             }
 
-            LastCount = Count;
+            PreviousCount = Count;
             Count = Count + currentCountResult;
         }
 
         public virtual void UpdateCount(int newCount)
         {
-            LastCount = Count;
+            PreviousCount = Count;
             Count = newCount;
         }
 
         public virtual void IncrementCount(int amount)
         {
-            LastCount = Count;
+            PreviousCount = Count;
             Count = Count + amount;
         }
     }
