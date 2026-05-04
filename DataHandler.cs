@@ -6,59 +6,69 @@ namespace Counters
 {
     public class DataHandler
     {
-        private int _previousCount = 0;
-        private int _currentCount = 0;
+        protected int _lastCount = 0;
         protected IInlineInvokeProxy _cph;
-        public int InitialCount { get; set; } = 0;
 
-        public int PreviousCount
+        protected int Count { get; set; }
+
+        protected int LastCount
         {
             get
             {
-                return _cph.GetGlobalVar<int>(PreviousCountArg, true);
-
+                return _lastCount;
             }
 
             set
             {
-                _previousCount = value;
-                _cph.SetGlobalVar(PreviousCountArg, value, true);
+                _lastCount = value;
+                _cph.SetGlobalVar(LastCountArg, value, true);
             }
         }
-        public int CurrentCount {
-            get { return Convert(_currentCount); }
-            set { _currentCount = value; }
+
+        public int InitialCount { get; protected set; } = 0;
+
+        /// <summary>
+        /// Returns the converted count value.
+        /// </summary>
+        public int LastCountOutput
+        {
+            get { return Convert(_lastCount); }
+        }
+
+        /// <summary>
+        /// Returns the converted count value.
+        /// </summary>
+        public int CountOutput {
+            get { return Convert(Count); }
         }
 
         public string RefreshCountArg { get; set; }
-        public string PreviousCountArg { get; set; }
+        public string LastCountArg { get; set; }
         public List<SceneSourcePair> InactiveSources { get; set; }
         public List<SceneSourcePair> ActiveSources { get; set; }
         public List<SceneSourcePair> CounterSources { get; set; }
         public Func<int, int> Convert { get; set; }
-        public Func<int, int, int> UpdateCount { get; set; }
 
-        public DataHandler(IInlineInvokeProxy cph, string refreshCountArg, string previousCountArg, List<SceneSourcePair> inactiveSources, List<SceneSourcePair> activeSources, List<SceneSourcePair> counterSources, Func<int, int> convert, Func<int, int, int> updateCount)
+        public DataHandler(IInlineInvokeProxy cph, string refreshCountArg, string lastCountArg, List<SceneSourcePair> inactiveSources, List<SceneSourcePair> activeSources, List<SceneSourcePair> counterSources, Func<int, int> convert)
         {
             _cph = cph;
             RefreshCountArg = refreshCountArg;
-            PreviousCountArg = previousCountArg;
+            LastCountArg = lastCountArg;
             InactiveSources = inactiveSources ?? new List<SceneSourcePair>();
             ActiveSources = activeSources ?? new List<SceneSourcePair>();
             CounterSources = counterSources ?? new List<SceneSourcePair>();
             Convert = convert ?? ((number) => number);
-            UpdateCount = updateCount ?? ((current, updated) => updated);
             Initialize();
         }
 
         public virtual void Initialize()
         {
-            // Don't forget to actually get the values before running this code. 
-            UpdateData(PreviousCountArg);
-            InitialCount = PreviousCount;
+            LastCount = _cph.GetGlobalVar<int>(LastCountArg, true);
+            InitialCount = LastCount;
+            Count = LastCount;
         }
 
-        public virtual void UpdateData(string argName)
+        public virtual void UpdateCount(string argName)
         {
             if (!_cph.TryGetArg<int>(argName, out int currentCountResult))
             {
@@ -66,19 +76,39 @@ namespace Counters
                 return;
             }
 
-            CurrentCount = UpdateCount(_currentCount, currentCountResult);
+            LastCount = Count;
+            Count = currentCountResult;
         }
 
-        public virtual void UpdateData(int newCount)
+        public virtual void IncrementCount(string argName)
         {
-            CurrentCount = UpdateCount(_currentCount, newCount);
+            if (!_cph.TryGetArg<int>(argName, out int currentCountResult))
+            {
+                _cph.LogError($"TryGetArg for {argName} failed.");
+                return;
+            }
+
+            LastCount = Count;
+            Count = Count + currentCountResult;
+        }
+
+        public virtual void UpdateCount(int newCount)
+        {
+            LastCount = Count;
+            Count = newCount;
+        }
+
+        public virtual void IncrementCount(int amount)
+        {
+            LastCount = Count;
+            Count = Count + amount;
         }
     }
 
     public class DataHandlerWithItem : DataHandler
     {
         public SceneSourcePair ItemSource { get; set; }
-        public DataHandlerWithItem(IInlineInvokeProxy cph, string currentCountName, string previousCountName, List<SceneSourcePair> inactiveSources, List<SceneSourcePair> activeSources, List<SceneSourcePair> counterSources, SceneSourcePair itemSource, Func<int, int> convert, Func<int, int, int> updateCount) : base(cph, currentCountName, previousCountName, inactiveSources, activeSources, counterSources, convert, updateCount)
+        public DataHandlerWithItem(IInlineInvokeProxy cph, string currentCountName, string previousCountName, List<SceneSourcePair> inactiveSources, List<SceneSourcePair> activeSources, List<SceneSourcePair> counterSources, SceneSourcePair itemSource, Func<int, int> convert, Func<int, int, int> updateCount) : base(cph, currentCountName, previousCountName, inactiveSources, activeSources, counterSources, convert)
         {
             ItemSource = itemSource;
         }

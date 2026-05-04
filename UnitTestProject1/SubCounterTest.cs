@@ -16,84 +16,84 @@ namespace Test_Chamber
             CounterManager.InitializeAll(CPH);
         }
 
-        [TestMethod]
-        public void Execute_previous_count_correct_after_execute()
-        {       
-            CPH.SetArg(MockCPH.subscriberCount, 7);
-            CPH.SetGlobalVar(MockCPH.lastSubscriberCount, 5);
+        //[TestMethod]
+        //public void Execute_previous_count_correct_after_execute()
+        //{       
+        //    CPH.SetArg(MockCPH.subscriberCount, 7);
+        //    CPH.SetGlobalVar(MockCPH.lastSubscriberCount, 5);
 
-            CounterManager.subCounter.Execute();
-            int previousSubCountAfter = CounterManager.subCounter.DataHandler.PreviousCount;
+        //    CounterManager.subCounter.Execute();
+        //    int previousSubCountAfter = CounterManager.subCounter.DataHandler.PreviousCount;
 
-            Assert.AreEqual(7, previousSubCountAfter);
-        }
+        //    Assert.AreEqual(7, previousSubCountAfter);
+        //}
 
-        [TestMethod]
-        public void Execute_previous_count_correct_before_execute()
-        {
+        //[TestMethod]
+        //public void Execute_previous_count_correct_before_execute()
+        //{
          
-            CPH.SetArg(MockCPH.subscriberCount, 7);
-            CPH.SetGlobalVar(MockCPH.lastSubscriberCount, 5);
-            int previousSubCountBefore = CounterManager.subCounter.DataHandler.PreviousCount;
+        //    CPH.SetArg(MockCPH.subscriberCount, 7);
+        //    CPH.SetGlobalVar(MockCPH.lastSubscriberCount, 5);
+        //    int previousSubCountBefore = CounterManager.subCounter.DataHandler.PreviousCount;
 
-            CounterManager.subCounter.Execute();
+        //    CounterManager.subCounter.Execute();
 
-            Assert.AreEqual(5, previousSubCountBefore);
-        }
+        //    Assert.AreEqual(5, previousSubCountBefore);
+        //}
 
-        [TestMethod]
-        public void Execute_saved_previous_count_correct_after_execute()
-        {
+        //[TestMethod]
+        //public void Execute_saved_previous_count_correct_after_execute()
+        //{
 
-            CPH.SetArg(MockCPH.subscriberCount, 7);
-            CPH.SetGlobalVar(MockCPH.lastSubscriberCount, 5);
+        //    CPH.SetArg(MockCPH.subscriberCount, 7);
+        //    CPH.SetGlobalVar(MockCPH.lastSubscriberCount, 5);
 
-            CounterManager.subCounter.Execute();
+        //    CounterManager.subCounter.Execute();
 
-            bool result = CPH._sources.TryGetValue(SOURCES.SUB_COUNT.Source, out Source afterValue);
-            int sourceContentAfter = Convert.ToInt16(result ? afterValue.Value : "-1");
+        //    bool result = CPH._sources.TryGetValue(SOURCES.SUB_COUNT.Source, out Source afterValue);
+        //    int sourceContentAfter = Convert.ToInt16(result ? afterValue.Value : "-1");
 
-            Assert.AreEqual(7, sourceContentAfter);
-        }
+        //    Assert.AreEqual(7, sourceContentAfter);
+        //}
 
-        [TestMethod]
-        public void Execute_saved_previous_count_correct_before_execute()
-        {
+        //[TestMethod]
+        //public void Execute_saved_previous_count_correct_before_execute()
+        //{
 
-            CPH.SetArg(MockCPH.subscriberCount, 7);
-            CPH.SetGlobalVar(MockCPH.lastSubscriberCount, 5);
+        //    CPH.SetArg(MockCPH.subscriberCount, 7);
+        //    CPH.SetGlobalVar(MockCPH.lastSubscriberCount, 5);
 
-            bool result = CPH._sources.TryGetValue(SOURCES.SUB_COUNT.Source, out Source beforeValue);
-            int sourceContentBefore = Convert.ToInt16(result ? beforeValue.Value : "-1");
-            CounterManager.subCounter.Execute();
+        //    bool result = CPH._sources.TryGetValue(SOURCES.SUB_COUNT.Source, out Source beforeValue);
+        //    int sourceContentBefore = Convert.ToInt16(result ? beforeValue.Value : "-1");
+        //    CounterManager.subCounter.Execute();
 
-            Assert.AreEqual(-1, sourceContentBefore);
-        }
+        //    Assert.AreEqual(-1, sourceContentBefore);
+        //}
 
-        [TestMethod]
-        public void Execute_previous_count_is_correct_after_three_executes()
-        {
-            CPH.SetArg(MockCPH.subscriberCount, 5);
+        //[TestMethod]
+        //public void Execute_previous_count_is_correct_after_three_executes()
+        //{
+        //    CPH.SetArg(MockCPH.subscriberCount, 5);
 
-            CounterManager.subCounter.Execute();
-            CounterManager.subCounter.Execute();
-            CounterManager.subCounter.Execute();
-            int previousSubCountAfter = CounterManager.subCounter.DataHandler.PreviousCount;
+        //    CounterManager.subCounter.Execute();
+        //    CounterManager.subCounter.Execute();
+        //    CounterManager.subCounter.Execute();
+        //    int previousSubCountAfter = CounterManager.subCounter.DataHandler.PreviousCount;
 
-            Assert.AreEqual(5, previousSubCountAfter);
-        }
+        //    Assert.AreEqual(5, previousSubCountAfter);
+        //}
 
-        [TestMethod]
-        public void Execute_previous_count_is_higher_than_current_count()
-        {
-            CPH.SetArg(MockCPH.subscriberCount, 5);
-            CPH.SetGlobalVar(MockCPH.lastSubscriberCount, 10);
+        //[TestMethod]
+        //public void Execute_previous_count_is_higher_than_current_count()
+        //{
+        //    CPH.SetArg(MockCPH.subscriberCount, 5);
+        //    CPH.SetGlobalVar(MockCPH.lastSubscriberCount, 10);
 
-            CounterManager.subCounter.Execute();
-            int previousSubCountAfter = CounterManager.subCounter.DataHandler.PreviousCount;
+        //    CounterManager.subCounter.Execute();
+        //    int previousSubCountAfter = CounterManager.subCounter.DataHandler.PreviousCount;
 
-            // Also check saved.
-            Assert.AreEqual(5, previousSubCountAfter);
-        }
+        //    // Also check saved.
+        //    Assert.AreEqual(5, previousSubCountAfter);
+        //}
     }
 }

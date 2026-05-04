@@ -71,21 +71,21 @@ namespace Counters
 
         public static void InitializeAll(IInlineInvokeProxy CPH)
         {
-            var tipDataHandler = new DataHandler(CPH, "tipAmount", "lastTips", TIP_INACTIVE_SOURCES, TIP_ACTIVE_SOURCES, TIP_COUNTER_SOURCES, (nr) => nr * 5, (current, updated) => current + updated);
+            var tipDataHandler = new DataHandler(CPH, "tipAmount", "lastTips", TIP_INACTIVE_SOURCES, TIP_ACTIVE_SOURCES, TIP_COUNTER_SOURCES, (nr) => nr * 5);
             var tipIncrementSound = new SoundPlayerLoop(CPH, SOURCES.SOUND_RING_INCREMENT, SOURCES.SOUND_MULTI_RING_GET, 500);
             tipCounter = new Counter(CPH, tipDataHandler, 1, tipIncrementSound);
             
-            var tipDataHandlerTest = new DataHandler(CPH, "message", "lastTips", TIP_INACTIVE_SOURCES, TIP_ACTIVE_SOURCES, TIP_COUNTER_SOURCES, (nr) => nr * 5, (current, updated) => current + updated);
+            var tipDataHandlerTest = new DataHandler(CPH, "message", "lastTips", TIP_INACTIVE_SOURCES, TIP_ACTIVE_SOURCES, TIP_COUNTER_SOURCES, (nr) => nr * 5);
             tipCounterTest = new Counter(CPH, tipDataHandlerTest, 1, tipIncrementSound);
 
-            var bitDataHandler = new DataHandler(CPH, "bits", "lastBits", BIT_INACTIVE_SOURCES, BIT_ACTIVE_SOURCES, BIT_COUNTER_SOURCES, (nr) => nr / 2, (current, updated) => current + updated);
+            var bitDataHandler = new DataHandler(CPH, "bits", "lastBits", BIT_INACTIVE_SOURCES, BIT_ACTIVE_SOURCES, BIT_COUNTER_SOURCES, (nr) => nr / 2);
             var bitIncrementSound = new SoundPlayerLoop(CPH, SOURCES.SOUND_RING_INCREMENT, SOURCES.SOUND_MULTI_RING_GET, 500);
             bitCounter = new Counter(CPH, bitDataHandler, 1, bitIncrementSound);
             
-            var bitDataHandlerTest = new DataHandler(CPH, "message", "lastBits", BIT_INACTIVE_SOURCES, BIT_ACTIVE_SOURCES, BIT_COUNTER_SOURCES, (nr) => nr / 2, (current, updated) => current + updated);
+            var bitDataHandlerTest = new DataHandler(CPH, "message", "lastBits", BIT_INACTIVE_SOURCES, BIT_ACTIVE_SOURCES, BIT_COUNTER_SOURCES, (nr) => nr / 2);
             bitCounterTest = new Counter(CPH, bitDataHandlerTest, 1, bitIncrementSound);
 
-            var subDataHandler = new DataHandler(CPH, "subscriberCount", "lastSubscriberCount", SUB_INACTIVE_SOURCES, SUB_ACTIVE_SOURCES, SUB_COUNTER_SOURCES, null, null);
+            var subDataHandler = new DataHandler(CPH, "subscriberCount", "lastSubscriberCount", SUB_INACTIVE_SOURCES, SUB_ACTIVE_SOURCES, SUB_COUNTER_SOURCES, null);
             var subIncrementSound = new SoundPlayerBasic(CPH, SOURCES.SOUND_SUB_INCREMENT, 2000);
             subCounter = new Counter(CPH, subDataHandler, 500, subIncrementSound);
 

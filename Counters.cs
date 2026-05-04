@@ -34,7 +34,7 @@ namespace Counters
 
         public virtual bool ResetToLast()
         {
-            WriteToSources(DataHandler.CounterSources, DataHandler.PreviousCount);
+            WriteToSources(DataHandler.CounterSources, DataHandler.LastCountOutput);
 
             return true;
         }
@@ -54,9 +54,9 @@ namespace Counters
 
         protected virtual void PrepareWrite()
         {
-            if (DataHandler.PreviousCount >= DataHandler.CurrentCount)
+            if (DataHandler.LastCountOutput >= DataHandler.CountOutput)
             {
-                WriteToSources(DataHandler.CounterSources, DataHandler.CurrentCount);
+                WriteToSources(DataHandler.CounterSources, DataHandler.CountOutput);
             }
 
             SetWriteState(true);
@@ -65,11 +65,11 @@ namespace Counters
 
         protected virtual void ApplyWrite()
         {
-            for (int i = DataHandler.PreviousCount; i <= DataHandler.CurrentCount; i++)
+            for (int i = DataHandler.LastCountOutput; i <= DataHandler.CountOutput; i++)
             {
                 WriteToSources(DataHandler.CounterSources, i);
                 IncrementSound.Play();
-                bool isLastIteration = i >= DataHandler.CurrentCount;
+                bool isLastIteration = i >= DataHandler.CountOutput;
                 _cph.Wait(isLastIteration ? IncrementSound.SourceLength : LoopSpeed);
             }
         }
@@ -77,7 +77,6 @@ namespace Counters
         protected virtual void FinishWrite()
         {
             SetWriteState(false);
-            DataHandler.PreviousCount = DataHandler.CurrentCount;
             IncrementSound.Finish();
         }
 
@@ -86,24 +85,6 @@ namespace Counters
             PrepareWrite();
             ApplyWrite();
             FinishWrite();
-        }
-
-        public void Execute(string argName)
-        {
-            DataHandler.UpdateData(argName);
-            WriteToOBS();
-        }
-
-        public void Execute(int newCount)
-        {
-            DataHandler.UpdateData(newCount);
-            WriteToOBS();
-        }
-
-        public void Execute()
-        {
-            DataHandler.UpdateData(DataHandler.RefreshCountArg);
-            WriteToOBS();
         }
     }
 
@@ -151,8 +132,8 @@ namespace Counters
 
         public bool Refresh()
         {
-            DataHandler.UpdateData(DataHandler.RefreshCountArg);
-            int heartCount = DataHandler.CurrentCount % Mod == 0 ? Mod : DataHandler.CurrentCount % Mod;
+            DataHandler.UpdateCount(DataHandler.RefreshCountArg);
+            int heartCount = DataHandler.CountOutput % Mod == 0 ? Mod : DataHandler.CountOutput % Mod;
             for (int i = 1; i <= Mod; i++)
             {
                 int position = i % Mod;
@@ -171,7 +152,7 @@ namespace Counters
 
         public override bool ResetToLast()
         {
-            int heartCount = DataHandler.PreviousCount % Mod == 0 ? Mod : DataHandler.PreviousCount % Mod;
+            int heartCount = DataHandler.LastCountOutput % Mod == 0 ? Mod : DataHandler.LastCountOutput % Mod;
             for (int i = 1; i <= Mod; i++)
             {
                 int position = i % Mod;
@@ -210,7 +191,7 @@ namespace Counters
 
         protected override void PrepareWrite()
         {
-            if (DataHandler.PreviousCount >= DataHandler.CurrentCount)
+            if (DataHandler.LastCountOutput >= DataHandler.CountOutput)
             {
                 Refresh();
             }
@@ -222,7 +203,7 @@ namespace Counters
 
         protected override void ApplyWrite()
         {
-            var removeSequence = GetRemoveSequence(DataHandler.PreviousCount, DataHandler.CurrentCount);
+            var removeSequence = GetRemoveSequence(DataHandler.LastCountOutput, DataHandler.CountOutput);
 
             foreach (int position in removeSequence)
             {
@@ -238,7 +219,7 @@ namespace Counters
                 _cph.Wait(last ? DecrementSound.SourceLength : LoopSpeed);
             }
 
-            var addSequence = GetAddSequence(DataHandler.PreviousCount, DataHandler.CurrentCount);
+            var addSequence = GetAddSequence(DataHandler.LastCountOutput, DataHandler.CountOutput);
             foreach (int position in addSequence)
             {
                 if (position == 1)
@@ -257,7 +238,6 @@ namespace Counters
         protected override void FinishWrite()
         {
             SetWriteState(false);
-            DataHandler.PreviousCount = DataHandler.CurrentCount;
             IncrementSound.Finish();
             DecrementSound.Finish();
         }

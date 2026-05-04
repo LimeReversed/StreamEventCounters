@@ -58,29 +58,32 @@ namespace Test_Chamber
             currentCounter = CounterManager.followCounter;
         }
 
+        // **** INCREMENT COUNT TESTS ****
         [TestMethod]
-        public void Execute_GoesFrom15To18_CurrentCountIs18()
+        public void IncrementCount_GoesFrom15To18_CurrentCountIsCorrect()
         {
             CPH.SetGlobalVar(MockCPH.lastFollowerCount, 15);
-            CPH.SetArg(MockCPH.followerCount, 18);
+            CPH.SetArg(MockCPH.followerCount, 3);
+            currentCounter.DataHandler.Initialize();
 
-            currentCounter.Execute();
+            currentCounter.DataHandler.IncrementCount(MockCPH.followerCount);
 
-            int currentCount = currentCounter.DataHandler.CurrentCount;
+            int currentCount = currentCounter.DataHandler.CountOutput;
 
             Assert.AreEqual(18, currentCount);
         }
 
         [TestMethod]
-        public void Execute_GoesFrom15To18_Shows8Hearts()
+        public void IncrementCount_GoesFrom15To18_Shows8Hearts()
         {
             CPH.SetGlobalVar(MockCPH.lastFollowerCount, 15);
-            CPH.SetArg(MockCPH.followerCount, 18);
+            CPH.SetArg(MockCPH.followerCount, 3);
+            currentCounter.DataHandler.Initialize();
             DataHandlerWithItem currentDataHandler = currentCounter.DataHandler as DataHandlerWithItem;
             currentCounter.ResetToLast();
 
-            currentCounter.Execute();
-
+            currentCounter.DataHandler.IncrementCount(MockCPH.followerCount);
+            currentCounter.WriteToOBS();
             SceneSourcePair currentSources = currentDataHandler.ItemSource;
             var allItems = GetAllCountItems(currentSources, 10, CPH);
             var expectedItems = new Dictionary<string, Source>()
@@ -101,14 +104,16 @@ namespace Test_Chamber
         }
 
         [TestMethod]
-        public void Execute_GoesFrom15To25_Shows5Hearts()
+        public void IncrementCount_GoesFrom15To25_Shows5Hearts()
         {
             CPH.SetGlobalVar(MockCPH.lastFollowerCount, 15);
-            CPH.SetArg(MockCPH.followerCount, 25);
+            CPH.SetArg(MockCPH.followerCount, 10);
+            currentCounter.DataHandler.Initialize();
             DataHandlerWithItem currentDataHandler = currentCounter.DataHandler as DataHandlerWithItem;
             currentCounter.ResetToLast();
 
-            currentCounter.Execute();
+            currentCounter.DataHandler.IncrementCount(MockCPH.followerCount);
+            currentCounter.WriteToOBS();
 
             SceneSourcePair currentSources = currentDataHandler.ItemSource;
             var allItems = GetAllCountItems(currentSources, 10, CPH);
@@ -130,16 +135,169 @@ namespace Test_Chamber
         }
 
         [TestMethod]
-        public void Execute_ThreeTimes_ShowsCorrectHearts()
+        public void IncrementCount_ThreeTimes_ShowsCorrectHearts()
         {
             CPH.SetGlobalVar(MockCPH.lastFollowerCount, 15);
-            CPH.SetArg(MockCPH.followerCount, 18);
+            CPH.SetArg(MockCPH.followerCount, 2);
+            currentCounter.DataHandler.Initialize();
             DataHandlerWithItem currentDataHandler = currentCounter.DataHandler as DataHandlerWithItem;
             currentCounter.ResetToLast();
 
-            currentCounter.Execute();
-            currentCounter.Execute();
-            currentCounter.Execute();
+            currentCounter.DataHandler.IncrementCount(MockCPH.followerCount);
+            currentCounter.WriteToOBS();
+            currentCounter.DataHandler.IncrementCount(MockCPH.followerCount);
+            currentCounter.WriteToOBS();
+            currentCounter.DataHandler.IncrementCount(MockCPH.followerCount);
+            currentCounter.WriteToOBS();
+
+            SceneSourcePair currentSources = currentDataHandler.ItemSource;
+            var allItems = GetAllCountItems(currentSources, 10, CPH);
+            var expectedItems = new Dictionary<string, Source>()
+            {
+                { "Heart 1 Full", new Source( null ,true) },
+                { "Heart 2 Full", new Source( null ,false) },
+                { "Heart 3 Full", new Source( null ,false) },
+                { "Heart 4 Full", new Source( null ,false) },
+                { "Heart 5 Full", new Source( null ,false) },
+                { "Heart 6 Full", new Source( null ,false) },
+                { "Heart 7 Full", new Source( null ,false) },
+                { "Heart 8 Full", new Source( null ,false) },
+                { "Heart 9 Full", new Source( null ,false) },
+                { "Heart 0 Full", new Source( null ,false) }
+            };
+
+            Assert.IsTrue(ItemsAreEqual(expectedItems, allItems));
+        }
+
+        [TestMethod]
+        public void IncrementCount_UpdateThreeTimes_ShowsCorrectHearts()
+        {
+            CPH.SetGlobalVar(MockCPH.lastFollowerCount, 15);
+            CPH.SetArg(MockCPH.followerCount, 18);
+            currentCounter.DataHandler.Initialize();
+            DataHandlerWithItem currentDataHandler = currentCounter.DataHandler as DataHandlerWithItem;
+            currentCounter.ResetToLast();
+
+            currentCounter.DataHandler.IncrementCount(MockCPH.followerCount);
+            currentCounter.WriteToOBS();
+            CPH.SetArg(MockCPH.followerCount, 2);
+            currentCounter.DataHandler.IncrementCount(MockCPH.followerCount);
+            currentCounter.WriteToOBS();
+            CPH.SetArg(MockCPH.followerCount, 9);
+            currentCounter.DataHandler.IncrementCount(MockCPH.followerCount);
+            currentCounter.WriteToOBS();
+
+            SceneSourcePair currentSources = currentDataHandler.ItemSource;
+            var allItems = GetAllCountItems(currentSources, 10, CPH);
+            var expectedItems = new Dictionary<string, Source>()
+            {
+                { "Heart 1 Full", new Source( null ,true) },
+                { "Heart 2 Full", new Source( null ,true) },
+                { "Heart 3 Full", new Source( null ,true) },
+                { "Heart 4 Full", new Source( null ,true) },
+                { "Heart 5 Full", new Source( null ,false) },
+                { "Heart 6 Full", new Source( null ,false) },
+                { "Heart 7 Full", new Source( null ,false) },
+                { "Heart 8 Full", new Source( null ,false) },
+                { "Heart 9 Full", new Source( null ,false) },
+                { "Heart 0 Full", new Source( null ,false) }
+            };
+
+            Assert.IsTrue(ItemsAreEqual(expectedItems, allItems));
+        }
+
+        // **** UpdateCount Tests ****
+        [TestMethod]
+        public void UpdateCount_GoesFrom15To18_CurrentCountIsCorrect()
+        {
+            CPH.SetGlobalVar(MockCPH.lastFollowerCount, 15);
+            CPH.SetArg(MockCPH.followerCount, 18);
+            currentCounter.DataHandler.Initialize();
+
+            currentCounter.DataHandler.UpdateCount(MockCPH.followerCount);
+            currentCounter.WriteToOBS();
+
+            int currentCount = currentCounter.DataHandler.CountOutput;
+
+            Assert.AreEqual(18, currentCount);
+        }
+
+        [TestMethod]
+        public void UpdateCount_GoesFrom15To18_Shows8Hearts()
+        {
+            CPH.SetGlobalVar(MockCPH.lastFollowerCount, 15);
+            CPH.SetArg(MockCPH.followerCount, 18);
+            currentCounter.DataHandler.Initialize();
+            DataHandlerWithItem currentDataHandler = currentCounter.DataHandler as DataHandlerWithItem;
+            currentCounter.ResetToLast();
+
+            currentCounter.DataHandler.UpdateCount(MockCPH.followerCount);
+            currentCounter.WriteToOBS();
+            SceneSourcePair currentSources = currentDataHandler.ItemSource;
+            var allItems = GetAllCountItems(currentSources, 10, CPH);
+            var expectedItems = new Dictionary<string, Source>()
+            {
+                { "Heart 1 Full", new Source( null ,true) },
+                { "Heart 2 Full", new Source( null ,true) },
+                { "Heart 3 Full", new Source( null ,true) },
+                { "Heart 4 Full", new Source( null ,true) },
+                { "Heart 5 Full", new Source( null ,true) },
+                { "Heart 6 Full", new Source( null ,true) },
+                { "Heart 7 Full", new Source( null ,true) },
+                { "Heart 8 Full", new Source( null ,true) },
+                { "Heart 9 Full", new Source( null ,false) },
+                { "Heart 0 Full", new Source( null ,false) }
+            };
+
+            Assert.IsTrue(ItemsAreEqual(expectedItems, allItems));
+        }
+
+        [TestMethod]
+        public void UpdateCount_GoesFrom15To25_Shows5Hearts()
+        {
+            CPH.SetGlobalVar(MockCPH.lastFollowerCount, 10);
+            CPH.SetArg(MockCPH.followerCount, 25);
+            currentCounter.DataHandler.Initialize();
+            DataHandlerWithItem currentDataHandler = currentCounter.DataHandler as DataHandlerWithItem;
+            currentCounter.ResetToLast();
+
+            currentCounter.DataHandler.UpdateCount(MockCPH.followerCount);
+            currentCounter.WriteToOBS();
+
+            SceneSourcePair currentSources = currentDataHandler.ItemSource;
+            var allItems = GetAllCountItems(currentSources, 10, CPH);
+            var expectedItems = new Dictionary<string, Source>()
+            {
+                { "Heart 1 Full", new Source( null ,true) },
+                { "Heart 2 Full", new Source( null ,true) },
+                { "Heart 3 Full", new Source( null ,true) },
+                { "Heart 4 Full", new Source( null ,true) },
+                { "Heart 5 Full", new Source( null ,true) },
+                { "Heart 6 Full", new Source( null ,false) },
+                { "Heart 7 Full", new Source( null ,false) },
+                { "Heart 8 Full", new Source( null ,false) },
+                { "Heart 9 Full", new Source( null ,false) },
+                { "Heart 0 Full", new Source( null ,false) }
+            };
+
+            Assert.IsTrue(ItemsAreEqual(expectedItems, allItems));
+        }
+
+        [TestMethod]
+        public void UpdateCount_ThreeTimes_ShowsCorrectHearts()
+        {
+            CPH.SetGlobalVar(MockCPH.lastFollowerCount, 15);
+            CPH.SetArg(MockCPH.followerCount, 18);
+            currentCounter.DataHandler.Initialize();
+            DataHandlerWithItem currentDataHandler = currentCounter.DataHandler as DataHandlerWithItem;
+            currentCounter.ResetToLast();
+
+            currentCounter.DataHandler.UpdateCount(MockCPH.followerCount);
+            currentCounter.WriteToOBS();
+            currentCounter.DataHandler.UpdateCount(MockCPH.followerCount);
+            currentCounter.WriteToOBS();
+            currentCounter.DataHandler.UpdateCount(MockCPH.followerCount);
+            currentCounter.WriteToOBS();
 
             SceneSourcePair currentSources = currentDataHandler.ItemSource;
             var allItems = GetAllCountItems(currentSources, 10, CPH);
@@ -161,18 +319,22 @@ namespace Test_Chamber
         }
 
         [TestMethod]
-        public void Execute_UpdateThreeTimes_ShowsCorrectHearts()
+        public void UpdateCount_UpdateThreeTimes_ShowsCorrectHearts()
         {
             CPH.SetGlobalVar(MockCPH.lastFollowerCount, 15);
             CPH.SetArg(MockCPH.followerCount, 18);
+            currentCounter.DataHandler.Initialize();
             DataHandlerWithItem currentDataHandler = currentCounter.DataHandler as DataHandlerWithItem;
             currentCounter.ResetToLast();
 
-            currentCounter.Execute();
+            currentCounter.DataHandler.UpdateCount(MockCPH.followerCount);
+            currentCounter.WriteToOBS();
             CPH.SetArg(MockCPH.followerCount, 22);
-            currentCounter.Execute();
+            currentCounter.DataHandler.UpdateCount(MockCPH.followerCount);
+            currentCounter.WriteToOBS();
             CPH.SetArg(MockCPH.followerCount, 29);
-            currentCounter.Execute();
+            currentCounter.DataHandler.UpdateCount(MockCPH.followerCount);
+            currentCounter.WriteToOBS();
 
             SceneSourcePair currentSources = currentDataHandler.ItemSource;
             var allItems = GetAllCountItems(currentSources, 10, CPH);
