@@ -54,18 +54,14 @@ namespace Counters
 
         protected virtual void PrepareWrite()
         {
-            if (DataHandler.LastCountOutput >= DataHandler.CountOutput)
-            {
-                WriteToSources(DataHandler.CounterSources, DataHandler.CountOutput);
-            }
-
             SetWriteState(true);
             IncrementSound.Prepare();
         }
 
         protected virtual void ApplyWrite()
         {
-            for (int i = DataHandler.LastCountOutput; i <= DataHandler.CountOutput; i++)
+            // We start from the last count + 1 because the last count is already shown on OBS.
+            for (int i = DataHandler.LastCountOutput + 1; i <= DataHandler.CountOutput; i++)
             {
                 WriteToSources(DataHandler.CounterSources, i);
                 IncrementSound.Play();
@@ -205,6 +201,11 @@ namespace Counters
         {
             var removeSequence = GetRemoveSequence(DataHandler.LastCountOutput, DataHandler.CountOutput);
 
+            if ( removeSequence.Count > 0)
+            {
+                DecrementSound.Play();
+            }
+
             foreach (int position in removeSequence)
             {
                 if (position == 0)
@@ -215,8 +216,6 @@ namespace Counters
 
                 bool last = position == removeSequence[removeSequence.Count - 1];
                 WriteToSource((DataHandler as DataHandlerWithItem).ItemSource, false, position);
-                DecrementSound.Play();
-                _cph.Wait(last ? DecrementSound.SourceLength : LoopSpeed);
             }
 
             var addSequence = GetAddSequence(DataHandler.LastCountOutput, DataHandler.CountOutput);

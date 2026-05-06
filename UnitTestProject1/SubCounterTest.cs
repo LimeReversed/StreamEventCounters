@@ -8,53 +8,32 @@ namespace Test_Chamber
     public class SubCounterTest
     {
         MockCPH CPH = null;
+        Counter currentCounter = null;
 
         [TestInitialize()]
         public void Initialize()
         {
             CPH = new MockCPH();
             CounterManager.InitializeAll(CPH);
+            currentCounter = CounterManager.subCounter;
         }
 
-        //[TestMethod]
-        //public void Execute_previous_count_correct_after_execute()
-        //{       
-        //    CPH.SetArg(MockCPH.subscriberCount, 7);
-        //    CPH.SetGlobalVar(MockCPH.lastSubscriberCount, 5);
+        [TestMethod]
+        public void Execute_saved_previous_count_correct_after_execute()
+        {
 
-        //    CounterManager.subCounter.Execute();
-        //    int previousSubCountAfter = CounterManager.subCounter.DataHandler.PreviousCount;
+            CPH.SetArg(MockCPH.subscriberCount, 6);
+            CPH.SetGlobalVar(MockCPH.lastSubscriberCount, 5);
+            currentCounter.DataHandler.Initialize();
 
-        //    Assert.AreEqual(7, previousSubCountAfter);
-        //}
+            currentCounter.DataHandler.IncrementCount(1);
+            currentCounter.WriteToOBS();
 
-        //[TestMethod]
-        //public void Execute_previous_count_correct_before_execute()
-        //{
-         
-        //    CPH.SetArg(MockCPH.subscriberCount, 7);
-        //    CPH.SetGlobalVar(MockCPH.lastSubscriberCount, 5);
-        //    int previousSubCountBefore = CounterManager.subCounter.DataHandler.PreviousCount;
+            bool result = CPH._sources.TryGetValue(SOURCES.SUB_COUNT.Source, out Source afterValue);
+            int sourceContentAfter = Convert.ToInt16(result ? afterValue.Value : "-1");
 
-        //    CounterManager.subCounter.Execute();
-
-        //    Assert.AreEqual(5, previousSubCountBefore);
-        //}
-
-        //[TestMethod]
-        //public void Execute_saved_previous_count_correct_after_execute()
-        //{
-
-        //    CPH.SetArg(MockCPH.subscriberCount, 7);
-        //    CPH.SetGlobalVar(MockCPH.lastSubscriberCount, 5);
-
-        //    CounterManager.subCounter.Execute();
-
-        //    bool result = CPH._sources.TryGetValue(SOURCES.SUB_COUNT.Source, out Source afterValue);
-        //    int sourceContentAfter = Convert.ToInt16(result ? afterValue.Value : "-1");
-
-        //    Assert.AreEqual(7, sourceContentAfter);
-        //}
+            Assert.AreEqual(6, sourceContentAfter);
+        }
 
         //[TestMethod]
         //public void Execute_saved_previous_count_correct_before_execute()

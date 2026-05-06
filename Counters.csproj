@@ -53,6 +53,7 @@
   <ItemGroup>
     <Compile Include="CounterManager.cs" />
     <Compile Include="Counters.cs" />
+    <Compile Include="CPHInline.cs" />
     <Compile Include="DataHandler.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SoundPlayer.cs" />
