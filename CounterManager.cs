@@ -78,11 +78,11 @@ namespace Counters
             var tipDataHandlerTest = new DataHandler(CPH, "message", "lastTips", TIP_INACTIVE_SOURCES, TIP_ACTIVE_SOURCES, TIP_COUNTER_SOURCES, (nr) => nr * 5);
             tipCounterTest = new Counter(CPH, tipDataHandlerTest, 1, tipIncrementSound);
 
-            var bitDataHandler = new DataHandler(CPH, "bits", "lastBits", BIT_INACTIVE_SOURCES, BIT_ACTIVE_SOURCES, BIT_COUNTER_SOURCES, (nr) => nr / 2);
+            var bitDataHandler = new DataHandler(CPH, "bits", "lastBits", BIT_INACTIVE_SOURCES, BIT_ACTIVE_SOURCES, BIT_COUNTER_SOURCES, null);
             var bitIncrementSound = new SoundPlayerLoop(CPH, SOURCES.SOUND_RING_INCREMENT, SOURCES.SOUND_MULTI_RING_GET, 500);
             bitCounter = new Counter(CPH, bitDataHandler, 1, bitIncrementSound);
             
-            var bitDataHandlerTest = new DataHandler(CPH, "message", "lastBits", BIT_INACTIVE_SOURCES, BIT_ACTIVE_SOURCES, BIT_COUNTER_SOURCES, (nr) => nr / 2);
+            var bitDataHandlerTest = new DataHandler(CPH, "message", "lastBits", BIT_INACTIVE_SOURCES, BIT_ACTIVE_SOURCES, BIT_COUNTER_SOURCES, null);
             bitCounterTest = new Counter(CPH, bitDataHandlerTest, 1, bitIncrementSound);
 
             var subDataHandler = new DataHandler(CPH, "subscriberCount", "lastSubscriberCount", SUB_INACTIVE_SOURCES, SUB_ACTIVE_SOURCES, SUB_COUNTER_SOURCES, null);
